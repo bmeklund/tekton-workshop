@@ -1,0 +1,727 @@
+= Module 3: Building your first pipeline
+:source-highlighter: rouge
+:toc: macro
+:toclevels: 1
+
+include::partial$_attributes.adoc[]
+
+Coolstuff Store's manager reviewed the work from Module 2 and is encouraged. You've shown that Tasks can run validate, test, and package steps automatically and that the same Task works for any service. Now comes the step that ties it all together: chaining Tasks into a Pipeline.
+
+A Pipeline gives Coolstuff Store a single, repeatable workflow that goes from source code to packaged artifact in one command. In this module, you'll build that pipeline, run it end-to-end, and extend it to pull source code directly from the Gitea server.
+
+toc::[]
+
+== Learning objectives
+
+By the end of this module, you'll be able to:
+
+* Create a Tekton Pipeline that chains multiple Tasks using `runAfter` ordering
+* Map Pipeline-level Parameters and Workspaces to individual Task inputs
+* Execute a Pipeline using a PipelineRun and monitor it through the visual pipeline graph
+* Extend a Pipeline by adding a Git source stage as the first step
+
+== Pipelines, Parameters, and Workspaces explained
+
+A Pipeline is a collection of Tasks with defined execution order and shared inputs. Three concepts are key to understanding how Pipelines work:
+
+* **`runAfter`**: Declares that a Task must wait for another to complete before it starts. This defines sequential ordering without coupling Tasks directly.
+* **Pipeline Parameters**: Defined at the Pipeline level and passed down to individual Tasks. This keeps TaskRuns simple, with one place to supply all values.
+* **Workspace mapping**: A Pipeline declares workspaces and maps them to each Task's workspace. All Tasks in a Pipeline can share the same underlying storage.
+
+NOTE: A PipelineRun is to a Pipeline what a TaskRun is to a Task. It supplies the runtime values (parameters, workspace bindings) and creates a record of the execution.
+
+[#exercise-1]
+== Exercise 1: Create your first Pipeline
+
+You'll create a Pipeline that chains 2 Tasks: the `build-coolstuff-app` Task from Module 2 and a new `summarize-build` Task that reports the build result. This gives you a complete build and report workflow in a single Pipeline.
+
+=== Create the summarize-build Task
+
+. In the **Terminal** tab, confirm you are in the correct project:
++
+[source,bash]
+----
+oc project tekton-workshop
+----
+
+. Create the `summarize-build` Task. It reads the artifact created by the build stage and prints a final build report:
++
+[source,bash]
+----
+cat > summarize-build-task.yaml << 'EOF'
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: summarize-build
+spec:
+  params:
+    - name: app-name
+      type: string
+      description: Name of the application that was built
+    - name: app-version
+      type: string
+      description: Version of the application that was built
+  workspaces:
+    - name: source
+      description: Workspace containing the build output from the previous stage
+  steps:
+    - name: summarize
+      image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+      script: |
+        #!/usr/bin/env bash
+        set -e
+        echo "========================================"
+        echo "  Coolstuff Store Build Summary"
+        echo "========================================"
+        echo "Application : $(params.app-name)"
+        echo "Version     : $(params.app-version)"
+        if [ -f $(workspaces.source.path)/artifact.txt ]; then
+          ARTIFACT=$(cat $(workspaces.source.path)/artifact.txt)
+          echo "Artifact    : $ARTIFACT"
+          echo "Status      : SUCCESS -- ready for deployment"
+        else
+          echo "Status      : FAILED -- artifact.txt not found"
+          exit 1
+        fi
+        echo "========================================"
+EOF
+----
+
+. Apply the Task:
++
+[source,bash]
+----
+oc apply -f summarize-build-task.yaml
+----
++
+Expected output:
++
+----
+task.tekton.dev/summarize-build created
+----
+
+=== Create the Pipeline
+
+. Create the `coolstuff-build-pipeline` Pipeline definition. It chains `build-coolstuff-app` followed by `summarize-build`, passing Parameters and the shared Workspace through both Tasks:
++
+[source,bash]
+----
+cat > coolstuff-pipeline.yaml << 'EOF'
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: coolstuff-build-pipeline
+spec:
+  params:
+    - name: app-name
+      type: string
+      default: "coolstuff-store-app"
+      description: Name of the application to build
+    - name: app-version
+      type: string
+      default: "1.0.0"
+      description: Version of the application to build
+  workspaces:
+    - name: shared-data
+      description: Shared workspace passed to all pipeline tasks
+  tasks:
+    - name: build
+      taskRef:
+        name: build-coolstuff-app
+      params:
+        - name: app-name
+          value: $(params.app-name)
+        - name: app-version
+          value: $(params.app-version)
+      workspaces:
+        - name: source
+          workspace: shared-data
+    - name: summarize
+      runAfter:
+        - build
+      taskRef:
+        name: summarize-build
+      params:
+        - name: app-name
+          value: $(params.app-name)
+        - name: app-version
+          value: $(params.app-version)
+      workspaces:
+        - name: source
+          workspace: shared-data
+EOF
+----
++
+NOTE: The workspace name in each task entry (`name: source`) is the name defined in the Task spec. The `workspace: shared-data` value is the Pipeline-level workspace name. These do not need to match -- this mapping is how the same Pipeline workspace reaches Tasks with different workspace names.
+
+. Apply the Pipeline:
++
+[source,bash]
+----
+oc apply -f coolstuff-pipeline.yaml
+----
++
+Expected output:
++
+----
+pipeline.tekton.dev/coolstuff-build-pipeline created
+----
+
+. Inspect the Pipeline structure:
++
+[source,bash]
+----
+tkn pipeline describe coolstuff-build-pipeline
+----
++
+Expected output includes:
++
+----
+Name:        coolstuff-build-pipeline
+
+Params
+ NAME          TYPE     DEFAULT
+ app-name      string   coolstuff-store-app
+ app-version   string   1.0.0
+
+Workspaces
+ NAME          OPTIONAL
+ shared-data   false
+
+Tasks
+ NAME       TASKREF              RUNAFTER
+ build      build-coolstuff-app
+ summarize  summarize-build      build
+----
+
+=== Verify
+
+Confirm the Pipeline is registered in the cluster:
+
+[source,bash]
+----
+oc get pipeline coolstuff-build-pipeline
+----
+
+* Pipeline name is `coolstuff-build-pipeline`
+* `tkn pipeline describe` shows 2 tasks with correct `runAfter` ordering
+
+[#exercise-2]
+== Exercise 2: Run the Pipeline with a PipelineRun
+
+With the Pipeline defined, you'll create a PipelineRun to execute it. The PipelineRun is where you supply the runtime values: parameter values and the workspace binding. After it starts, you'll view the visual pipeline graph in the OpenShift console, one of the most useful features for understanding pipeline status at a glance.
+
+. Create the PipelineRun definition:
++
+[source,bash]
+----
+cat > coolstuff-pipelinerun-01.yaml << 'EOF'
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: coolstuff-pipeline-run-01
+spec:
+  pipelineRef:
+    name: coolstuff-build-pipeline
+  params:
+    - name: app-name
+      value: "coolstuff-store-frontend"
+    - name: app-version
+      value: "3.0.0"
+  workspaces:
+    - name: shared-data
+      persistentVolumeClaim:
+        claimName: workshop-pvc
+EOF
+----
+
+. Apply the PipelineRun:
++
+[source,bash]
+----
+oc apply -f coolstuff-pipelinerun-01.yaml
+----
++
+Expected output:
++
+----
+pipelinerun.tekton.dev/coolstuff-pipeline-run-01 created
+----
+
+. Follow the logs for the entire pipeline:
++
+[source,bash]
+----
+tkn pipelinerun logs coolstuff-pipeline-run-01 -f
+----
++
+Expected output:
++
+----
+[build : validate] === Validating coolstuff-store-frontend v3.0.0 ===
+[build : validate] Workspace path: /workspace/source
+[build : validate] Validation passed.
+[build : test] === Running tests for coolstuff-store-frontend ===
+[build : test] Continuing from: validate-complete
+[build : test] All tests passed.
+[build : package] === Packaging coolstuff-store-frontend v3.0.0 ===
+[build : package] Continuing from: test-complete
+[build : package] Package created: coolstuff-store-frontend-3.0.0.tar.gz
+[summarize : summarize] ========================================
+[summarize : summarize]   Coolstuff Store Build Summary
+[summarize : summarize] ========================================
+[summarize : summarize] Application : coolstuff-store-frontend
+[summarize : summarize] Version     : 3.0.0
+[summarize : summarize] Artifact    : coolstuff-store-frontend-3.0.0.tar.gz
+[summarize : summarize] Status      : SUCCESS -- ready for deployment
+[summarize : summarize] ========================================
+----
++
+The log prefix format is `[task-name : step-name]`, which shows exactly which task and step produced each line.
+
+. While the PipelineRun is running (or after it completes), view the visual pipeline graph. In the **Developer** perspective, navigate to **Pipelines**, then select `coolstuff-build-pipeline`. Click on the `coolstuff-pipeline-run-01` run to see the visual graph.
+
+// TODO: Add screenshot of the pipeline graph in the OpenShift console showing build and summarize tasks with green Succeeded status
+image::pipeline-graph-succeeded.png[OpenShift console showing the coolstuff-build-pipeline graph with build and summarize task nodes both showing green Succeeded status,link=self,window=blank,width=700,title="Pipeline graph showing end-to-end execution from build to summary"]
+
+=== Verify
+
+Confirm the PipelineRun completed successfully:
+
+[source,bash]
+----
+oc get pipelinerun coolstuff-pipeline-run-01 \
+  -o jsonpath='{.status.conditions[0].reason}'
+----
+
+Expected output:
+
+----
+Succeeded
+----
+
+[source,bash]
+----
+tkn pipelinerun list
+----
+
+Expected output:
+
+----
+NAME                       STARTED        DURATION   STATUS
+coolstuff-pipeline-run-01  1 minute ago   35s        Succeeded
+----
+
+* PipelineRun status is `Succeeded`
+* Log output shows both `build` and `summarize` task logs
+* The pipeline graph in the console shows both nodes with a green status
+
+[#exercise-3]
+== Exercise 3: Add a Git source stage to the Pipeline
+
+Coolstuff Store's pipeline currently starts by assuming the source code is already in the workspace. In a real CI/CD workflow, the first stage should clone source code from Git. In this exercise, you'll create a `clone-source` Task that pulls code from the Gitea server, then extend the Pipeline to use it as the first stage.
+
+=== Create a repository in Gitea
+
+. Click the **Gitea** tab in the right panel to open the Gitea web interface. Log in with:
+
+* **Username**: `{gitea_user}`
+* **Password**: `{gitea_password}`
+
+. In the top right corner, click the **+** icon and select **New repository**.
+
+. Fill in the repository details:
+
+* **Repository name**: `coolstuff-app`
+* **Visibility**: Private (or Public -- either works)
+* Check **Initialize this repository**
+
+. Click **Create repository**.
+
+. Note the repository clone URL displayed at the top of the repository page. It will look like:
++
+----
+{gitea_url}/{gitea_user}/coolstuff-app.git
+----
+
+=== Create the clone-source Task
+
+. Create the `clone-source` Task. It uses a Red Hat Universal Base Image to install git and clone the specified repository:
++
+[source,bash]
+----
+cat > clone-source-task.yaml << 'EOF'
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: clone-source
+spec:
+  params:
+    - name: git-url
+      type: string
+      description: HTTP URL of the Git repository to clone
+    - name: git-revision
+      type: string
+      default: "main"
+      description: Branch, tag, or commit SHA to clone
+    - name: git-user
+      type: string
+      default: ""
+      description: Git username for authenticated clones (optional)
+    - name: git-password
+      type: string
+      default: ""
+      description: Git password or token for authenticated clones (optional)
+  workspaces:
+    - name: output
+      description: Workspace where the cloned repository will be written
+  steps:
+    - name: clone
+      image: registry.access.redhat.com/ubi9/ubi:latest
+      env:
+        - name: GIT_SSL_NO_VERIFY
+          value: "true"
+      script: |
+        #!/usr/bin/env bash
+        set -e
+
+        echo "=== Installing git ==="
+        dnf install -y git-core --nodocs -q
+
+        echo "=== Cloning repository ==="
+        echo "URL      : $(params.git-url)"
+        echo "Revision : $(params.git-revision)"
+
+        CLONE_URL="$(params.git-url)"
+
+        # Inject credentials into the URL if provided
+        if [ -n "$(params.git-user)" ]; then
+          PROTO=$(echo "$CLONE_URL" | cut -d: -f1)
+          HOST_PATH=$(echo "$CLONE_URL" | cut -d/ -f3-)
+          CLONE_URL="${PROTO}://$(params.git-user):$(params.git-password)@${HOST_PATH}"
+        fi
+
+        git clone \
+          --depth=1 \
+          --branch "$(params.git-revision)" \
+          "$CLONE_URL" \
+          "$(workspaces.output.path)/source"
+
+        echo "Repository cloned to: $(workspaces.output.path)/source"
+        echo "Files:"
+        ls "$(workspaces.output.path)/source"
+        echo "clone-complete" > "$(workspaces.output.path)/stage.txt"
+EOF
+----
++
+NOTE: `GIT_SSL_NO_VERIFY=true` skips TLS certificate verification. This is acceptable for a lab environment using a self-signed certificate. In production, configure the cluster CA certificate instead.
++
+NOTE: The `clone-source` Task uses `registry.access.redhat.com/ubi9/ubi:latest` (full Red Hat Universal Base Image 9). The first run takes about 30 seconds while git is installed. Subsequent runs are faster because the image layer is cached on the node.
+
+. Apply the Task:
++
+[source,bash]
+----
+oc apply -f clone-source-task.yaml
+----
++
+Expected output:
++
+----
+task.tekton.dev/clone-source created
+----
+
+=== Update the Pipeline to add the Git source stage
+
+. Update the Pipeline definition to prepend the `clone-source` Task. The updated Pipeline has 3 tasks: `fetch-source`, then `build`, then `summarize`:
++
+[source,bash]
+----
+cat > coolstuff-pipeline-v2.yaml << 'EOF'
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: coolstuff-build-pipeline
+spec:
+  params:
+    - name: git-url
+      type: string
+      description: HTTP URL of the Git repository to clone
+    - name: git-revision
+      type: string
+      default: "main"
+      description: Branch or tag to clone
+    - name: git-user
+      type: string
+      default: ""
+      description: Git username for private repositories
+    - name: git-password
+      type: string
+      default: ""
+      description: Git password for private repositories
+    - name: app-name
+      type: string
+      default: "coolstuff-store-app"
+    - name: app-version
+      type: string
+      default: "1.0.0"
+  workspaces:
+    - name: shared-data
+      description: Shared workspace for all pipeline stages
+  tasks:
+    - name: fetch-source
+      taskRef:
+        name: clone-source
+      params:
+        - name: git-url
+          value: $(params.git-url)
+        - name: git-revision
+          value: $(params.git-revision)
+        - name: git-user
+          value: $(params.git-user)
+        - name: git-password
+          value: $(params.git-password)
+      workspaces:
+        - name: output
+          workspace: shared-data
+    - name: build
+      runAfter:
+        - fetch-source
+      taskRef:
+        name: build-coolstuff-app
+      params:
+        - name: app-name
+          value: $(params.app-name)
+        - name: app-version
+          value: $(params.app-version)
+      workspaces:
+        - name: source
+          workspace: shared-data
+    - name: summarize
+      runAfter:
+        - build
+      taskRef:
+        name: summarize-build
+      params:
+        - name: app-name
+          value: $(params.app-name)
+        - name: app-version
+          value: $(params.app-version)
+      workspaces:
+        - name: source
+          workspace: shared-data
+EOF
+----
+
+. Apply the updated Pipeline. Because the name `coolstuff-build-pipeline` already exists, `oc apply` updates it in place:
++
+[source,bash]
+----
+oc apply -f coolstuff-pipeline-v2.yaml
+----
++
+Expected output:
++
+----
+pipeline.tekton.dev/coolstuff-build-pipeline configured
+----
+
+. Create a PipelineRun that provides the Gitea repository URL:
++
+[source,bash]
+----
+cat > coolstuff-pipelinerun-02.yaml << 'EOF'
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: coolstuff-pipeline-run-02
+spec:
+  pipelineRef:
+    name: coolstuff-build-pipeline
+  params:
+    - name: git-url
+      value: "{gitea_url}/{gitea_user}/coolstuff-app.git"
+    - name: git-revision
+      value: "main"
+    - name: git-user
+      value: "{gitea_user}"
+    - name: git-password
+      value: "{gitea_password}"
+    - name: app-name
+      value: "coolstuff-store-frontend"
+    - name: app-version
+      value: "3.1.0"
+  workspaces:
+    - name: shared-data
+      persistentVolumeClaim:
+        claimName: workshop-pvc
+EOF
+----
++
+IMPORTANT: Replace `{gitea_url}`, `{gitea_user}`, and `{gitea_password}` in `coolstuff-pipelinerun-02.yaml` with your actual lab values from the right panel before applying. These are your runtime credentials, not AsciiDoc attributes.
+
+. Apply the PipelineRun:
++
+[source,bash]
+----
+oc apply -f coolstuff-pipelinerun-02.yaml
+----
+
+. Follow the full pipeline log:
++
+[source,bash]
+----
+tkn pipelinerun logs coolstuff-pipeline-run-02 -f
+----
++
+Expected output:
++
+----
+[fetch-source : clone] === Installing git ===
+[fetch-source : clone] === Cloning repository ===
+[fetch-source : clone] URL      : https://gitea.../coolstuff-app.git
+[fetch-source : clone] Revision : main
+[fetch-source : clone] Repository cloned to: /workspace/output/source
+[fetch-source : clone] Files:
+[fetch-source : clone] README.md
+[build : validate] === Validating coolstuff-store-frontend v3.1.0 ===
+[build : validate] Workspace path: /workspace/source
+[build : validate] Validation passed.
+[build : test] === Running tests for coolstuff-store-frontend ===
+[build : test] Continuing from: validate-complete
+[build : test] All tests passed.
+[build : package] === Packaging coolstuff-store-frontend v3.1.0 ===
+[build : package] Continuing from: test-complete
+[build : package] Package created: coolstuff-store-frontend-3.1.0.tar.gz
+[summarize : summarize] ========================================
+[summarize : summarize]   Coolstuff Store Build Summary
+[summarize : summarize] ========================================
+[summarize : summarize] Artifact    : coolstuff-store-frontend-3.1.0.tar.gz
+[summarize : summarize] Status      : SUCCESS -- ready for deployment
+[summarize : summarize] ========================================
+----
+
+. View the 3-stage pipeline graph in the **Developer** perspective under **Pipelines** → `coolstuff-build-pipeline` → `coolstuff-pipeline-run-02`.
+
+// TODO: Add screenshot of the 3-stage pipeline graph in the OpenShift console showing fetch-source, build, and summarize all Succeeded
+image::pipeline-three-stage-graph.png[OpenShift console pipeline graph showing fetch-source, build, and summarize task nodes in a linear sequence all with green Succeeded status,link=self,window=blank,width=700,title="3-stage pipeline from Git source to packaged artifact"]
+
+=== Verify
+
+Confirm the updated Pipeline has 3 stages:
+
+[source,bash]
+----
+tkn pipeline describe coolstuff-build-pipeline
+----
+
+Expected output includes:
+
+----
+Tasks
+ NAME           TASKREF              RUNAFTER
+ fetch-source   clone-source
+ build          build-coolstuff-app  fetch-source
+ summarize      summarize-build      build
+----
+
+Confirm both PipelineRuns completed:
+
+[source,bash]
+----
+tkn pipelinerun list
+----
+
+* `coolstuff-pipeline-run-02` shows `Succeeded`
+* Logs show the `fetch-source` stage running before `build`
+* The 3-stage pipeline graph is visible in the console
+
+== Troubleshooting
+
+**Issue**: PipelineRun shows `CouldntGetPipeline`.
+
+**Solution**: Confirm the Pipeline is present in the project:
+
+[source,bash]
+----
+oc get pipeline
+----
+
+If missing, re-apply `coolstuff-pipeline.yaml`.
+
+---
+
+**Issue**: `fetch-source` stage fails with `dnf: command not found`.
+
+**Solution**: The `clone-source` Task uses `ubi9/ubi:latest` (full UBI), not `ubi9/ubi-minimal`. Confirm the Task spec uses `registry.access.redhat.com/ubi9/ubi:latest` as the image. Re-apply the Task if needed.
+
+---
+
+**Issue**: `fetch-source` stage fails with `fatal: repository not found` or `403 Forbidden`.
+
+**Solution**:
+
+. Confirm the Gitea repository was created and is accessible at `{gitea_url}/{gitea_user}/coolstuff-app`.
+. Confirm the `git-user` and `git-password` parameter values in `coolstuff-pipelinerun-02.yaml` match your Gitea credentials exactly.
+. If the repository is Private, ensure credentials are supplied in the PipelineRun params.
+
+---
+
+**Issue**: `fetch-source` stage fails with `SSL certificate problem`.
+
+**Solution**: The `GIT_SSL_NO_VERIFY=true` env var should suppress SSL errors. Confirm it is present in the `clone-source` Task's step definition under `env:`. Re-apply `clone-source-task.yaml` if needed.
+
+---
+
+**Issue**: PipelineRun stays in `Pending` because the PVC is already in use.
+
+**Solution**: The `workshop-pvc` PVC uses `ReadWriteOnce` and can only be mounted by 1 pod at a time. Confirm the previous PipelineRun has fully completed before starting a new one:
+
+[source,bash]
+----
+tkn pipelinerun list
+----
+
+Wait until `coolstuff-pipeline-run-01` shows `Succeeded` before applying `coolstuff-pipelinerun-02.yaml`.
+
+---
+
+**Issue**: `build` stage fails with `cat: /workspace/source/stage.txt: No such file or directory`.
+
+**Solution**: The clone-source Task writes `stage.txt` to `$(workspaces.output.path)`, which maps to `shared-data`. The build Task reads from `$(workspaces.source.path)`, which also maps to `shared-data`. Both paths resolve to the same PVC mount. Confirm the workspace mapping in the Pipeline uses `workspace: shared-data` for both `fetch-source` and `build` task entries.
+
+== Module summary
+
+Coolstuff Store's manager just watched a pipeline run end-to-end: clone source from Gitea, validate, test, package, and report. That's the CI/CD workflow they've been asking for.
+
+**What you accomplished:**
+
+* Created a `coolstuff-build-pipeline` Pipeline chaining 2 Tasks with `runAfter` ordering
+* Ran the Pipeline using a PipelineRun and monitored it through the visual pipeline graph
+* Added a `clone-source` Task that pulls real source code from the Gitea server
+* Extended the Pipeline to 3 stages: fetch-source, build, and summarize
+
+**Key takeaways:**
+
+* Pipelines define workflow order with `runAfter`. Tasks remain independent and reusable.
+* Pipeline Parameters flow down to Tasks. One PipelineRun value reaches all Tasks that need it.
+* Workspace mapping decouples Task workspace names from Pipeline workspace names.
+* The OpenShift console pipeline graph gives instant visual status for every stage.
+
+**Next steps:**
+
+xref:06-module-04-monitoring-troubleshooting.adoc[Module 4: Monitoring and troubleshooting] covers how to investigate failed pipeline runs, read logs at the task and step level, and use the console to diagnose problems quickly.
+
+== Learning outcomes
+
+By completing this module, you should now understand:
+
+* How Pipelines chain Tasks using `runAfter` without creating tight coupling between them
+* How Pipeline Parameters and Workspace mappings connect the Pipeline definition to each individual Task
+* How a PipelineRun provides the runtime context (parameters, workspace bindings) that a Pipeline needs to execute
+* How the OpenShift console visual pipeline graph helps operators and developers understand pipeline status at a glance
+
+== Assets needed
+
+. `content/modules/ROOT/assets/images/pipeline-graph-succeeded.png` -- OpenShift console pipeline graph showing build and summarize tasks with Succeeded status (clickable full-size)
+. `content/modules/ROOT/assets/images/pipeline-three-stage-graph.png` -- OpenShift console pipeline graph showing the 3-stage fetch-source, build, and summarize pipeline (clickable full-size)

@@ -1,0 +1,541 @@
+= Module 5: Pipelines as Code
+:source-highlighter: rouge
+:toc: macro
+:toclevels: 1
+
+include::partial$_attributes.adoc[]
+
+Coolstuff Store's pipeline is working, but the team has spotted a friction point. Every time a developer pushes code, someone has to manually run `oc apply` to create a new PipelineRun. Webhooks are configured by hand, pipeline definitions live only in the cluster, and there's no way to see pipeline status directly on a pull request.
+
+Pipelines as Code (PAC) solves all of this. It stores your pipeline definitions in the `.tekton/` directory of your application repository, triggers pipeline runs automatically on Git events such as push and pull request, and reports status back to the Git provider so developers see CI results without leaving their browser.
+
+In this module, you'll connect your Gitea repository to Pipelines as Code, store a PipelineRun template alongside your application code, and trigger your first automated pipeline run by pushing a commit.
+
+toc::[]
+
+== Learning objectives
+
+By the end of this module, you'll be able to:
+
+* Explain how Pipelines as Code differs from manually managed Tekton pipelines
+* Create a `Repository` custom resource to connect a Git repository to OpenShift Pipelines
+* Store a PipelineRun template in the `.tekton/` directory with the correct event annotations
+* Trigger pipeline runs automatically by pushing to a Git branch
+* Use GitOps PR comments (`/retest`, `/cancel`) to control pipeline execution
+
+== How Pipelines as Code works
+
+According to the link:https://pipelinesascode.com/[Pipelines as Code project^], PAC follows a GitOps model for CI/CD:
+
+* **Pipeline definitions live in Git**: PipelineRun templates are stored in a `.tekton/` directory in the application repository. They are versioned, reviewed, and merged alongside application code.
+* **Events trigger runs automatically**: PAC listens for Git events (push, pull request) via a webhook. When a matching event arrives, PAC creates a PipelineRun in the cluster automatically.
+* **Status is reported back to Git**: PAC updates the pull request or commit status in the Git provider so developers see pass/fail results without checking OpenShift directly.
+* **GitOps commands control execution**: Authorized users can comment `/retest`, `/test`, or `/cancel` on a pull request to control pipeline runs without touching the cluster.
+
+The connection between OpenShift and the Git repository is managed by the `Repository` custom resource. One Repository per Git repository tells PAC: which namespace to create PipelineRuns in, how to authenticate with the Git provider, and which webhook secret to use.
+
+NOTE: Pipelines as Code is included with Red Hat OpenShift Pipelines {pipelines_version} and is installed automatically by the operator. No separate installation is needed.
+
+[#exercise-1]
+== Exercise 1: Set up the Pipelines as Code repository
+
+In this exercise, you'll create a personal access token in Gitea, store it in a Kubernetes Secret, and create a `Repository` custom resource that connects your `coolstuff-app` Gitea repository to OpenShift Pipelines.
+
+=== Verify Pipelines as Code is running
+
+. In the **Terminal** tab, confirm you are in the correct project:
++
+[source,bash]
+----
+oc project tekton-workshop
+----
+
+. Confirm the PAC controller is running in the `openshift-pipelines` namespace:
++
+[source,bash]
+----
+oc get pods -n openshift-pipelines -l app.kubernetes.io/part-of=pipelines-as-code
+----
++
+Expected output:
++
+----
+NAME                                          READY   STATUS    RESTARTS   AGE
+pipelines-as-code-controller-...             1/1     Running   0          1h
+pipelines-as-code-watcher-...               1/1     Running   0          1h
+pipelines-as-code-webhook-...               1/1     Running   0          1h
+----
+
+. Get the PAC controller's public route URL. Gitea will use this to send webhook events to OpenShift:
++
+[source,bash]
+----
+oc get route pipelines-as-code-controller \
+  -n openshift-pipelines \
+  -o jsonpath='https://{.spec.host}{"\n"}'
+----
++
+Copy this URL. You will need it when configuring the webhook in Gitea.
+
+=== Create a Gitea personal access token
+
+. Open the **Gitea** tab in the right panel and log in with your credentials.
+
+. Click your profile avatar in the top right corner, then select **Settings**.
+
+. In the left sidebar, click **Applications**.
+
+. Under **Manage access tokens**, fill in:
+
+* **Token name**: `pac-token`
+* **Permissions**: select **Issues: Read/Write** and **Repository: Read/Write**
+
+. Click **Generate token** and copy the generated token immediately. It is shown only once.
+
+=== Create the webhook secret and Kubernetes Secret
+
+. In the terminal, generate a random webhook secret:
++
+[source,bash]
+----
+WEBHOOK_SECRET=$(openssl rand -hex 20)
+echo "Webhook secret: $WEBHOOK_SECRET"
+----
++
+Copy the value shown. You will need it when creating the Gitea webhook.
+
+. Create a Kubernetes Secret that stores both the Gitea token and webhook secret. Replace `<your-gitea-token>` with the token you copied from Gitea, and `<your-webhook-secret>` with the value from the previous step:
++
+[source,bash]
+----
+cat > gitea-pac-secret.yaml << 'EOF'
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gitea-pac-secret
+  namespace: tekton-workshop
+type: Opaque
+stringData:
+  provider.token: "<your-gitea-token>"
+  webhook.secret: "<your-webhook-secret>"
+EOF
+----
++
+Edit the file and replace the placeholder values, then apply it:
++
+[source,bash]
+----
+oc apply -f gitea-pac-secret.yaml
+----
++
+Expected output:
++
+----
+secret/gitea-pac-secret created
+----
+
+=== Create the Repository custom resource
+
+. Create the `Repository` resource that links your Gitea repository to OpenShift Pipelines:
++
+[source,bash]
+----
+cat > coolstuff-repository.yaml << 'EOF'
+apiVersion: pipelinesascode.tekton.dev/v1alpha1
+kind: Repository
+metadata:
+  name: coolstuff-app
+  namespace: tekton-workshop
+spec:
+  url: "{gitea_url}/{gitea_user}/coolstuff-app"
+  git_provider:
+    secret:
+      name: "gitea-pac-secret"
+      key: "provider.token"
+    webhook_secret:
+      name: "gitea-pac-secret"
+      key: "webhook.secret"
+EOF
+----
++
+NOTE: Replace `{gitea_url}` and `{gitea_user}` with your actual lab values before applying.
+
+. Apply the Repository:
++
+[source,bash]
+----
+oc apply -f coolstuff-repository.yaml
+----
++
+Expected output:
++
+----
+repository.pipelinesascode.tekton.dev/coolstuff-app created
+----
+
+. Confirm the Repository was created:
++
+[source,bash]
+----
+oc get repository coolstuff-app
+----
++
+Expected output:
++
+----
+NAME             URL
+coolstuff-app    https://gitea.../gitea_user/coolstuff-app
+----
+
+=== Configure the Gitea webhook
+
+. In Gitea, navigate to your `coolstuff-app` repository and click **Settings**, then **Webhooks**.
+
+. Click **Add webhook**, then select **Gitea**.
+
+. Fill in the webhook details:
+
+* **Target URL**: paste the PAC controller URL you retrieved earlier (e.g., `https://pipelines-as-code-controller-openshift-pipelines.apps.cluster.domain`)
+* **Secret**: paste the webhook secret value you generated (`$WEBHOOK_SECRET`)
+* **Trigger on**: select **Push events** and **Pull Request events**
+
+. Click **Add webhook**.
+
+. Click **Test delivery** to confirm Gitea can reach the PAC controller. A `200` response confirms the connection is working.
+
+// TODO: Add screenshot of the Gitea webhook configuration page showing the PAC controller URL and a 200 test delivery response
+image::gitea-webhook-configured.png[Gitea webhook settings page showing the PAC controller URL filled in and a successful 200 test delivery response,link=self,window=blank,width=700,title="Gitea webhook configured to send events to Pipelines as Code"]
+
+=== Verify
+
+[source,bash]
+----
+oc get repository coolstuff-app \
+  -o jsonpath='{.metadata.name}{"\t"}{.spec.url}{"\n"}'
+----
+
+* Repository name is `coolstuff-app`
+* URL matches your Gitea repository URL
+* Gitea webhook shows a successful `200` test delivery
+
+[#exercise-2]
+== Exercise 2: Add a PipelineRun template to the repository
+
+With the Repository resource in place, PAC will watch your Gitea repository for events. Now you'll add a PipelineRun template to the `.tekton/` directory. PAC automatically detects this file, reads its event annotations, and creates a PipelineRun whenever a matching Git event arrives.
+
+=== Understand the .tekton directory structure
+
+PAC reads pipeline definitions from the `.tekton/` directory at the root of your repository. Each YAML file in that directory can contain a `PipelineRun` or `TaskRun` resource with special annotations that control when it runs:
+
+* `pipelinesascode.tekton.dev/on-event`: which Git events trigger this run. Values: `[push]`, `[pull_request]`, `[push, pull_request]`.
+* `pipelinesascode.tekton.dev/on-target-branch`: which branch(es) the event must target. Values: `[main]`, `[main, develop]`, or a glob pattern like `[feature/*]`.
+* `pipelinesascode.tekton.dev/max-keep-runs`: how many completed PipelineRuns to retain before pruning older ones.
+
+PAC also injects dynamic variables into the template before creating the PipelineRun:
+
+* `{{ revision }}`: the commit SHA that triggered the run
+* `{{ repo_url }}`: the full URL of the repository
+* `{{ source_branch }}`: the branch the event came from
+* `{{ target_branch }}`: the target branch (relevant for pull requests)
+
+=== Create the .tekton directory and PipelineRun template
+
+. In the Gitea web UI, navigate to your `coolstuff-app` repository.
+
+. Click the **+** icon or **New file** button to create a new file.
+
+. Set the file path to `.tekton/push-pipeline.yaml` (include the directory name in the path -- Gitea creates the directory automatically).
+
+. Paste the following PipelineRun template as the file content:
++
+[source,yaml]
+----
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: coolstuff-build-push
+  annotations:
+    pipelinesascode.tekton.dev/on-event: "[push]"
+    pipelinesascode.tekton.dev/on-target-branch: "[main]"
+    pipelinesascode.tekton.dev/max-keep-runs: "5"
+spec:
+  pipelineSpec:
+    tasks:
+      - name: build
+        taskRef:
+          name: build-coolstuff-app
+        params:
+          - name: app-name
+            value: "coolstuff-store-app"
+          - name: app-version
+            value: "{{ revision }}"
+        workspaces:
+          - name: source
+            workspace: shared-data
+      - name: summarize
+        runAfter:
+          - build
+        taskRef:
+          name: summarize-build
+        params:
+          - name: app-name
+            value: "coolstuff-store-app"
+          - name: app-version
+            value: "{{ revision }}"
+        workspaces:
+          - name: source
+            workspace: shared-data
+    workspaces:
+      - name: shared-data
+  workspaces:
+    - name: shared-data
+      emptyDir: {}
+----
++
+NOTE: The `{{ revision }}` placeholder is replaced by PAC with the actual commit SHA at runtime. The Tasks `build-coolstuff-app` and `summarize-build` must exist in the cluster. They were created in Modules 2 and 3.
++
+NOTE: This template uses `emptyDir` as the workspace backing. This is suitable for short-lived CI runs where artifacts do not need to persist between runs. For production pipelines that pass artifacts to a deploy stage, use a `volumeClaimTemplate` instead.
+
+. Set the commit message to `Add PAC pipeline definition` and click **Commit changes** to commit directly to `main`.
+
+=== Watch the pipeline trigger automatically
+
+. Switch back to the **Terminal** tab and watch for new PipelineRuns:
++
+[source,bash]
+----
+oc get pipelinerun -w
+----
++
+Within a few seconds of the Gitea commit, PAC creates a new PipelineRun automatically:
++
+----
+NAME                                           SUCCEEDED   REASON    STARTTIME   COMPLETIONTIME
+coolstuff-build-push-<revision>-push-...      Unknown     Running   5s
+coolstuff-build-push-<revision>-push-...      True        Succeeded 35s         36s
+----
++
+Press `Ctrl+C` to stop watching.
+
+. View the logs of the PAC-triggered run:
++
+[source,bash]
+----
+tkn pipelinerun logs --last -f
+----
++
+Expected output includes:
++
+----
+[build : validate] === Validating coolstuff-store-app v<commit-sha> ===
+[build : validate] Validation passed.
+[build : test] All tests passed.
+[build : package] Package created: coolstuff-store-app-<commit-sha>.tar.gz
+[summarize : summarize] Artifact    : coolstuff-store-app-<commit-sha>.tar.gz
+[summarize : summarize] Status      : SUCCESS -- ready for deployment
+----
+
+. View the pipeline run in the OpenShift console. In the **Developer** perspective, navigate to **Pipelines**, then **PipelineRuns**. The PAC-triggered run will be listed alongside the manually created runs from earlier modules.
+
+// TODO: Add screenshot of the PipelineRuns list showing a PAC-triggered run alongside manually created runs
+image::pac-triggered-pipelinerun.png[OpenShift console PipelineRuns list showing a PAC-triggered run with a commit SHA in the name alongside previous manually created runs,link=self,window=blank,width=700,title="PAC-triggered PipelineRun created automatically on Git push"]
+
+=== Verify
+
+[source,bash]
+----
+tkn pipelinerun list | head -5
+----
+
+* The most recent PipelineRun name includes the commit SHA
+* Status shows `Succeeded`
+* The run was created automatically without an `oc apply` command
+
+[#exercise-3]
+== Exercise 3: Use GitOps commands to control pipeline runs
+
+One of the most useful features of Pipelines as Code is the ability to control pipeline runs with comments on a pull request. In this exercise, you'll create a pull request in Gitea, observe the automatic pipeline trigger, and use `/retest` to re-trigger a run without pushing new code.
+
+=== Create a pull request to trigger a pipeline
+
+. In the Gitea web UI, navigate to your `coolstuff-app` repository.
+
+. Click **New file** (or edit an existing file like `README.md`).
+
+. Make a small change -- for example, add a line `## Module 5 update` to the `README.md` file.
+
+. Set the commit message to `Add module 5 update note`.
+
+. Instead of committing directly to `main`, select **Create a new branch for this commit**. Name the branch `feature/module-5-update`.
+
+. Click **Propose file change** to create the branch and open a pull request.
+
+. On the pull request creation page, confirm the base branch is `main` and click **Create Pull Request**.
+
+. Return to the **Terminal** tab and watch for a new PipelineRun triggered by the pull request event:
++
+[source,bash]
+----
+oc get pipelinerun -w
+----
++
+NOTE: If no pull request event trigger appeared, check that your `.tekton/push-pipeline.yaml` annotation includes `pull_request` as a trigger event. Alternatively, update the file to add pull request support as shown below.
+
+. To add pull request triggering, edit `.tekton/push-pipeline.yaml` in Gitea and update the annotation:
++
+[source,yaml]
+----
+    pipelinesascode.tekton.dev/on-event: "[push, pull_request]"
+----
++
+Commit this change to `main` and re-open or update the pull request.
+
+=== Use GitOps commands in pull request comments
+
+Once a pipeline run has completed for the pull request, you can control re-execution using PR comments.
+
+. In the Gitea pull request, click **Comment**.
+
+. Type `/retest` in the comment body and submit.
++
+PAC detects the comment from an authorized user and triggers a new PipelineRun for the same commit. This is useful when you want to retry a CI run without pushing new code -- for example, after a transient infrastructure failure.
+
+. Watch the new run appear:
++
+[source,bash]
+----
+tkn pipelinerun list | head -5
+----
+
+. To cancel a running PipelineRun, post a `/cancel` comment in the pull request while a run is in progress. PAC cancels all matching running PipelineRuns for that commit.
+
+Available GitOps commands, as documented in the link:https://pipelinesascode.com/docs/guide/gitops_commands/[Pipelines as Code GitOps commands reference^]:
+
+* `/retest` -- Re-runs all failed PipelineRuns for the current commit
+* `/test` -- Runs all matching PipelineRuns regardless of current status
+* `/retest <pipelinerun-name>` -- Re-runs a specific PipelineRun by name
+* `/cancel` -- Cancels all running PipelineRuns for the current commit
+* `/ok-to-test` -- Allows repository owners to approve pipeline runs for pull requests from external contributors who are not already authorized
+
+=== Verify
+
+[source,bash]
+----
+tkn pipelinerun list
+----
+
+* Multiple PipelineRuns exist with the same commit SHA in their names (showing the `/retest` triggered a new run)
+* Status of `/retest`-triggered run shows `Succeeded`
+
+[source,bash]
+----
+oc get repository coolstuff-app \
+  -o jsonpath='{.status.lastPipelineRuns}'
+----
+
+* The `lastPipelineRuns` field shows recent run history managed by PAC
+
+== Troubleshooting
+
+**Issue**: No PipelineRun is created after pushing to Gitea.
+
+**Solution**:
+
+. Confirm the webhook delivered successfully. In Gitea, navigate to **Settings**, then **Webhooks**, and click the webhook entry. Check the **Recent deliveries** tab for any `4xx` or `5xx` responses.
+. Verify the PAC controller route is reachable:
++
+[source,bash]
+----
+oc get route pipelines-as-code-controller -n openshift-pipelines
+----
+. Check the PAC controller logs for errors:
++
+[source,bash]
+----
+oc logs -n openshift-pipelines \
+  -l app.kubernetes.io/component=controller,app.kubernetes.io/part-of=pipelines-as-code \
+  --tail=50
+----
+
+---
+
+**Issue**: PipelineRun is created but immediately fails with `CouldntGetTask`.
+
+**Solution**: The Tasks referenced in the `.tekton/` PipelineRun template (`build-coolstuff-app`, `summarize-build`) must exist in the `tekton-workshop` namespace. Confirm they are present:
+
+[source,bash]
+----
+oc get tasks -n tekton-workshop
+----
+
+If missing, re-apply the Task definitions from Modules 2 and 3.
+
+---
+
+**Issue**: Repository resource shows no status or `lastPipelineRuns` is empty.
+
+**Solution**: Confirm the Repository URL in `coolstuff-repository.yaml` exactly matches the Gitea repository URL (including protocol and no trailing slash). The URL must match the `X-Gitea-Repo-URL` value sent in the webhook payload.
+
+---
+
+**Issue**: `/retest` comment in Gitea has no effect.
+
+**Solution**: The commenting user must be listed as a collaborator or owner on the Gitea repository for GitOps commands to be accepted. Anonymous or non-collaborator comments are ignored by PAC. Confirm your Gitea user `{gitea_user}` is the repository owner.
+
+---
+
+**Issue**: `pipelinesascode.tekton.dev/v1alpha1` resource not found when applying the Repository CRD.
+
+**Solution**: Confirm PAC CRDs are installed:
+
+[source,bash]
+----
+oc get crd repositories.pipelinesascode.tekton.dev
+----
+
+If missing, the PAC component of the OpenShift Pipelines operator did not install correctly. Check the operator pod status:
+
+[source,bash]
+----
+oc get pods -n openshift-pipelines
+----
+
+== Module summary
+
+Coolstuff Store's team can now push code and see their pipeline run automatically -- no manual PipelineRun creation, no separate webhook scripting, and no need to check OpenShift to see if the build passed.
+
+**What you accomplished:**
+
+* Verified Pipelines as Code is installed and running in the cluster
+* Created a `Repository` custom resource linking the Gitea repository to OpenShift Pipelines
+* Configured a Gitea webhook to send push and pull request events to the PAC controller
+* Stored a PipelineRun template in the `.tekton/` directory with event annotations
+* Triggered an automatic pipeline run by pushing a commit to Gitea
+* Used `/retest` in a pull request comment to re-trigger a run without pushing new code
+
+**Key takeaways:**
+
+* Pipelines as Code stores CI/CD definitions in Git alongside application code, making pipelines reviewable and versionable.
+* The `Repository` CRD is the link between a Git repository and an OpenShift namespace. 1 Repository per Git repository.
+* Annotations on the PipelineRun template control which Git events trigger the run and which branches are included.
+* PAC injects dynamic variables like `{{ revision }}` and `{{ source_branch }}` at runtime, removing the need to hardcode commit references.
+* GitOps commands (`/retest`, `/cancel`) give developers pipeline control without cluster access.
+
+**Next steps:**
+
+xref:08-conclusion.adoc[Conclusion and next steps] summarizes the full workshop and provides resources for continuing your Tekton and OpenShift Pipelines journey.
+
+== Learning outcomes
+
+By completing this module, you should now understand:
+
+* How Pipelines as Code automates pipeline triggering by listening to Git events through a webhook, removing the need for manual PipelineRun creation
+* The role of the `Repository` custom resource as the connection point between a Git repository and an OpenShift namespace
+* How `.tekton/` directory annotations (`on-event`, `on-target-branch`) filter which Git events trigger which pipeline definitions
+* How PAC dynamic variables like `{{ revision }}` and `{{ source_branch }}` make pipeline templates self-contained and reusable across commits and branches
+* How GitOps PR commands give developers pipeline control directly in their Git workflow without requiring cluster access
+
+== Assets needed
+
+. `content/modules/ROOT/assets/images/gitea-webhook-configured.png` -- Gitea webhook settings page showing the PAC controller URL and a successful 200 test delivery response (clickable full-size)
+. `content/modules/ROOT/assets/images/pac-triggered-pipelinerun.png` -- OpenShift console PipelineRuns list showing a PAC-triggered run with a commit SHA in the name (clickable full-size)

@@ -1,0 +1,10 @@
+:ocp_version: 4.20
+:pipelines_version: 1.20
+:console_url: {openshift_console_url}
+:api_url: {openshift_api_url}
+:user: {user}
+:password: {password}
+:namespace: {project_namespace}
+:gitea_url: {gitea_console_url}
+:gitea_user: {gitea_user}
+:gitea_password: {gitea_password}

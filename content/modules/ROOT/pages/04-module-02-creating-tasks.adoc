@@ -1,0 +1,508 @@
+= Module 2: Creating Tasks and TaskRuns
+:source-highlighter: rouge
+:toc: macro
+:toclevels: 1
+
+include::partial$_attributes.adoc[]
+
+In Module 1, you confirmed that Red Hat OpenShift Pipelines is running and created a simple single-step Task. Coolstuff Store's manager was impressed with the quick demonstration, but now wants to see something closer to a real build workflow.
+
+In this module, you'll build a multi-step Task that simulates the validate, test, and package stages of a CI/CD pipeline. You'll also learn how Workspaces allow steps within a Task to share data, which is essential for passing artifacts between pipeline stages.
+
+toc::[]
+
+== Learning objectives
+
+By the end of this module, you'll be able to:
+
+* Create a Tekton Task with multiple steps and Parameters
+* Explain the role of Parameters in making Tasks reusable across applications
+* Configure a Workspace on a Task to share data between steps
+* Bind a Workspace to a PersistentVolumeClaim (PVC) in a TaskRun
+
+== Multi-step Tasks and Workspaces explained
+
+In Module 1, your Task had 1 step. Real CI/CD workflows need multiple steps that run in sequence, where each step builds on the previous one. For example:
+
+* Step 1 clones source code from a Git repository
+* Step 2 runs unit tests against that source code
+* Step 3 builds a container image and pushes it to a registry
+
+To share data between steps, Tekton uses **Workspaces**. A Workspace is a shared filesystem that all steps in a Task can read from and write to. Workspace storage types include:
+
+* **PersistentVolumeClaim**: Durable storage, survives pod restarts. Recommended for build artifacts.
+* **emptyDir**: Ephemeral storage, wiped when the pod exits. Useful for temporary scratch space.
+* **ConfigMap or Secret**: Read-only data injected as files into the Task.
+
+NOTE: A Workspace is declared on the Task definition. A TaskRun binds the Workspace to an actual storage backend, such as a PVC. This separation keeps Tasks reusable across environments with different storage configurations.
+
+[#exercise-1]
+== Exercise 1: Create a multi-step Task with Parameters
+
+You'll create a Task called `build-coolstuff-app` that simulates the 3-stage build workflow Coolstuff Store needs: validate, test, and package. Using Parameters means the same Task definition can run for any application and version without modification.
+
+. In the **Terminal** tab, confirm you are in the correct project:
++
+[source,bash]
+----
+oc project tekton-workshop
+----
++
+Expected output:
++
+----
+Now using project "tekton-workshop" on server "...".
+----
+
+. Create the Task definition file:
++
+[source,bash]
+----
+cat > build-coolstuff-task.yaml << 'EOF'
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: build-coolstuff-app
+spec:
+  params:
+    - name: app-name
+      type: string
+      default: "coolstuff-store-app"
+      description: Name of the application to build
+    - name: app-version
+      type: string
+      default: "1.0.0"
+      description: Version of the application to build
+  workspaces:
+    - name: source
+      description: Shared workspace for passing data between build stages
+  steps:
+    - name: validate
+      image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+      script: |
+        #!/usr/bin/env bash
+        set -e
+        echo "=== Validating $(params.app-name) v$(params.app-version) ==="
+        echo "Workspace path: $(workspaces.source.path)"
+        echo "validate-complete" > $(workspaces.source.path)/stage.txt
+        echo "Validation passed."
+    - name: test
+      image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+      script: |
+        #!/usr/bin/env bash
+        set -e
+        echo "=== Running tests for $(params.app-name) ==="
+        PREV=$(cat $(workspaces.source.path)/stage.txt)
+        echo "Continuing from: $PREV"
+        echo "test-complete" > $(workspaces.source.path)/stage.txt
+        echo "All tests passed."
+    - name: package
+      image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+      script: |
+        #!/usr/bin/env bash
+        set -e
+        echo "=== Packaging $(params.app-name) v$(params.app-version) ==="
+        PREV=$(cat $(workspaces.source.path)/stage.txt)
+        echo "Continuing from: $PREV"
+        ARTIFACT="$(params.app-name)-$(params.app-version).tar.gz"
+        echo "$ARTIFACT" > $(workspaces.source.path)/artifact.txt
+        echo "Package created: $ARTIFACT"
+EOF
+----
+
+. Apply the Task:
++
+[source,bash]
+----
+oc apply -f build-coolstuff-task.yaml
+----
++
+Expected output:
++
+----
+task.tekton.dev/build-coolstuff-app created
+----
+
+. Inspect the Task structure using the Tekton CLI:
++
+[source,bash]
+----
+tkn task describe build-coolstuff-app
+----
++
+Expected output includes:
++
+----
+Name:        build-coolstuff-app
+
+Params
+ NAME          TYPE     DEFAULT
+ app-name      string   coolstuff-store-app
+ app-version   string   1.0.0
+
+Workspaces
+ NAME     DESCRIPTION
+ source   Shared workspace for passing data between build stages
+
+Steps
+ NAME       IMAGE
+ validate   registry.access.redhat.com/ubi9/ubi-minimal:latest
+ test       registry.access.redhat.com/ubi9/ubi-minimal:latest
+ package    registry.access.redhat.com/ubi9/ubi-minimal:latest
+----
+
+=== Verify
+
+Confirm the Task is present and has the correct structure:
+
+[source,bash]
+----
+oc get task build-coolstuff-app
+----
+
+* Task name is `build-coolstuff-app`
+* `tkn task describe` shows 3 steps, 2 params, 1 workspace
+
+[#exercise-2]
+== Exercise 2: Create a PVC and run the Task
+
+With the Task defined, you need to provide a storage backend for the Workspace. You'll create a PersistentVolumeClaim (PVC) that gives the Task steps a shared filesystem, then create a TaskRun that binds the Workspace to that PVC.
+
+. Create a PVC definition:
++
+[source,bash]
+----
+cat > workshop-pvc.yaml << 'EOF'
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: workshop-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+EOF
+----
+
+. Apply the PVC:
++
+[source,bash]
+----
+oc apply -f workshop-pvc.yaml
+----
++
+Expected output:
++
+----
+persistentvolumeclaim/workshop-pvc created
+----
+
+. Confirm the PVC is bound:
++
+[source,bash]
+----
+oc get pvc workshop-pvc
+----
++
+Expected output:
++
+----
+NAME           STATUS   VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+workshop-pvc   Bound    ...      1Gi        RWO            ...            10s
+----
++
+NOTE: OpenShift uses dynamic storage provisioning. The PVC moves from `Pending` to `Bound` automatically once storage is allocated. If it remains in `Pending` for more than 1 minute, see the troubleshooting section below.
+
+. Create a TaskRun that binds the Workspace to the PVC:
++
+[source,bash]
+----
+cat > build-taskrun-01.yaml << 'EOF'
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: build-coolstuff-run-01
+spec:
+  taskRef:
+    name: build-coolstuff-app
+  params:
+    - name: app-name
+      value: "coolstuff-store-frontend"
+    - name: app-version
+      value: "2.1.0"
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: workshop-pvc
+EOF
+----
+
+. Apply the TaskRun:
++
+[source,bash]
+----
+oc apply -f build-taskrun-01.yaml
+----
++
+Expected output:
++
+----
+taskrun.tekton.dev/build-coolstuff-run-01 created
+----
+
+. Follow the logs until the TaskRun completes:
++
+[source,bash]
+----
+tkn taskrun logs build-coolstuff-run-01 -f
+----
++
+Expected output:
++
+----
+[validate] === Validating coolstuff-store-frontend v2.1.0 ===
+[validate] Workspace path: /workspace/source
+[validate] Validation passed.
+[test] === Running tests for coolstuff-store-frontend ===
+[test] Continuing from: validate-complete
+[test] All tests passed.
+[package] === Packaging coolstuff-store-frontend v2.1.0 ===
+[package] Continuing from: test-complete
+[package] Package created: coolstuff-store-frontend-2.1.0.tar.gz
+----
++
+The `-f` flag follows the log stream and returns to the prompt when the TaskRun finishes.
+
+. View the TaskRun detail in the OpenShift console. In the **Developer** perspective, navigate to **Pipelines**, then **TaskRuns**. Click `build-coolstuff-run-01` to see each step and its log output side by side.
+
+// TODO: Add screenshot of the TaskRun detail page showing all 3 steps with log output
+image::taskrun-multistep-logs.png[OpenShift console TaskRun detail showing validate, test, and package steps with their log output,link=self,window=blank,width=700,title="Multi-step TaskRun with data flowing through the Workspace"]
+
+=== Verify
+
+Confirm all 3 steps completed and the TaskRun succeeded:
+
+[source,bash]
+----
+oc get taskrun build-coolstuff-run-01 \
+  -o jsonpath='{.status.conditions[0].reason}'
+----
+
+Expected output:
+
+----
+Succeeded
+----
+
+[source,bash]
+----
+oc get taskrun build-coolstuff-run-01 \
+  -o jsonpath='{.status.steps[*].name}'
+----
+
+Expected output:
+
+----
+validate test package
+----
+
+* Status reason is `Succeeded`
+* All 3 step names are present
+* Log output shows each step reading data written by the previous step
+
+[#exercise-3]
+== Exercise 3: Reuse the Task with different parameters
+
+One of the main reasons to define Tasks separately from TaskRuns is reusability. The same `build-coolstuff-app` Task can build any application at any version by providing different parameters. In this exercise, you'll run a second TaskRun for a different Coolstuff Store service.
+
+NOTE: Both TaskRuns in this exercise use the same PVC, so run them sequentially. The first TaskRun must finish before you start the second, because a ReadWriteOnce PVC can only be mounted by 1 pod at a time.
+
+. Create a second TaskRun with different parameter values:
++
+[source,bash]
+----
+cat > build-taskrun-02.yaml << 'EOF'
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: build-coolstuff-run-02
+spec:
+  taskRef:
+    name: build-coolstuff-app
+  params:
+    - name: app-name
+      value: "coolstuff-store-backend"
+    - name: app-version
+      value: "1.5.3"
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: workshop-pvc
+EOF
+----
+
+. Apply the second TaskRun:
++
+[source,bash]
+----
+oc apply -f build-taskrun-02.yaml
+----
+
+. Follow the logs:
++
+[source,bash]
+----
+tkn taskrun logs build-coolstuff-run-02 -f
+----
++
+Expected output:
++
+----
+[validate] === Validating coolstuff-store-backend v1.5.3 ===
+[validate] Workspace path: /workspace/source
+[validate] Validation passed.
+[test] === Running tests for coolstuff-store-backend ===
+[test] Continuing from: validate-complete
+[test] All tests passed.
+[package] === Packaging coolstuff-store-backend v1.5.3 ===
+[package] Continuing from: test-complete
+[package] Package created: coolstuff-store-backend-1.5.3.tar.gz
+----
+
+. List all TaskRuns in the project:
++
+[source,bash]
+----
+tkn taskrun list
+----
++
+Expected output:
++
+----
+NAME                      STARTED         DURATION   STATUS
+build-coolstuff-run-02    30 seconds ago  15s        Succeeded
+build-coolstuff-run-01    2 minutes ago   18s        Succeeded
+hello-coolstuff-run-01    10 minutes ago  12s        Succeeded
+----
+
+. View the TaskRuns list in the **Developer** perspective under **Pipelines**, then **TaskRuns**.
+
+// TODO: Add screenshot of the TaskRuns list in the OpenShift console showing both build TaskRuns with Succeeded status
+image::taskrun-list-console.png[OpenShift console TaskRuns list showing build-coolstuff-run-01 and build-coolstuff-run-02 both with green Succeeded status badges,link=self,window=blank,width=700,title="TaskRuns list demonstrating Task reuse with different parameters"]
+
+=== Verify
+
+Confirm both TaskRuns completed successfully:
+
+[source,bash]
+----
+tkn taskrun list
+----
+
+* Both `build-coolstuff-run-01` and `build-coolstuff-run-02` show `Succeeded`
+* Each TaskRun used the same `build-coolstuff-app` Task definition
+* Each TaskRun produced a different artifact name based on the parameters supplied
+
+== Troubleshooting
+
+**Issue**: PVC stays in `Pending` and does not bind.
+
+**Solution**:
+
+. Check available StorageClasses:
++
+[source,bash]
+----
+oc get storageclass
+----
+
+. Confirm at least 1 StorageClass is marked as the default (shows `(default)` next to the name).
+. If no default exists, specify one explicitly in `workshop-pvc.yaml` by adding `storageClassName: <name>` under `spec:`, then re-apply.
+
+---
+
+**Issue**: TaskRun fails with `CouldntGetTask: tasks.tekton.dev "build-coolstuff-app" not found`.
+
+**Solution**:
+
+. Verify the Task exists in the project:
++
+[source,bash]
+----
+oc get tasks
+----
+
+. If missing, re-apply:
++
+[source,bash]
+----
+oc apply -f build-coolstuff-task.yaml
+----
+
+---
+
+**Issue**: Step `test` fails with `cat: /workspace/source/stage.txt: No such file or directory`.
+
+**Solution**: This error means the `validate` step did not write the file. Possible causes include a failed validate step or a missing Workspace binding. Confirm the TaskRun `workspaces` section references the correct PVC name and that the workspace `name` in the TaskRun matches the workspace `name` in the Task (`source`).
+
+---
+
+**Issue**: `build-coolstuff-run-02` stays in `Pending` after `build-coolstuff-run-01` is still running.
+
+**Solution**: The PVC uses `ReadWriteOnce`, which allows only 1 pod to mount it at a time. Wait for `build-coolstuff-run-01` to reach `Succeeded` before applying `build-taskrun-02.yaml`.
+
+[source,bash]
+----
+oc get taskrun build-coolstuff-run-01 -w
+----
+
+---
+
+**Issue**: `tkn taskrun logs` returns `Error: no TaskRun with name`.
+
+**Solution**: Confirm the TaskRun name matches exactly, including case:
+
+[source,bash]
+----
+tkn taskrun list
+----
+
+Use the exact name shown in the list output.
+
+== Module summary
+
+Coolstuff Store's manager can now see a recognizable CI/CD flow: validate, test, and package, running automatically for any service. You've also shown that 1 Task definition is enough to build the entire service portfolio, just by changing parameters.
+
+**What you accomplished:**
+
+* Created a Tekton Task with 3 steps, 2 Parameters, and 1 Workspace
+* Created a PVC and bound it to the Task through a TaskRun
+* Confirmed data flows between steps via the shared Workspace
+* Ran the same Task twice with different parameters to demonstrate reusability
+
+**Key takeaways:**
+
+* Steps in a Task run sequentially and share data through Workspaces.
+* Parameters make Tasks reusable. TaskRuns supply the runtime values.
+* Workspaces decouple storage configuration from Task definitions.
+* In Module 3, you'll chain Tasks like these into a Pipeline that orchestrates a full CI/CD workflow.
+
+**Next steps:**
+
+xref:05-module-03-building-pipelines.adoc[Module 3: Building your first pipeline] chains the Tasks you've written into an end-to-end Pipeline and runs it against Coolstuff Store's Gitea repository.
+
+== Learning outcomes
+
+By completing this module, you should now understand:
+
+* How multiple steps within a Task run sequentially and share data through a Workspace
+* The role of Parameters in making Tasks reusable without modifying the Task definition
+* How Workspaces decouple storage configuration from Task logic, allowing the same Task to run in different environments
+* The pattern of defining a Task once and executing it many times with different TaskRuns, which is the foundation of scalable CI/CD automation
+
+== Assets needed
+
+. `content/modules/ROOT/assets/images/taskrun-multistep-logs.png` -- OpenShift console TaskRun detail showing validate, test, and package steps with their log output (clickable full-size)
+. `content/modules/ROOT/assets/images/taskrun-list-console.png` -- OpenShift console TaskRuns list showing both build TaskRuns with Succeeded status (clickable full-size)

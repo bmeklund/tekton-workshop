@@ -1,0 +1,164 @@
+= Workshop details
+:toc:
+:toc-placement: preamble
+:icons: font
+
+include::partial$_attributes.adoc[]
+
+== Timing and schedule
+
+=== Full workshop (2 hours)
+
+* **Module 1**: Tekton fundamentals (30 minutes)
+* **Module 2**: Creating Tasks and TaskRuns (35 minutes)
+* **Module 3**: Building your first pipeline (35 minutes)
+* **Module 4**: Monitoring and troubleshooting (20 minutes)
+
+=== Abbreviated workshop (1 hour)
+
+* **Module 1**: Tekton fundamentals (30 minutes)
+* **Module 2**: Creating Tasks and TaskRuns (30 minutes, abbreviated)
+
+== Technical requirements
+
+=== Software versions
+
+* Red Hat OpenShift {ocp_version}
+* Red Hat OpenShift Pipelines {pipelines_version}
+* OpenShift CLI (`oc`) version 4.20
+* Tekton CLI (`tkn`) version 0.38 or later
+* Web browser (Chrome, Firefox, Safari, or Edge)
+
+=== Environment access
+
+Participants need access to:
+
+* OpenShift {ocp_version} multinode cluster (provided in the lab)
+* Gitea Git server (provided in the lab)
+* Web terminal accessible from the right panel in Showroom
+
+=== Network requirements
+
+* Internet connectivity is not required for this lab
+* All required images and resources are pre-deployed in your lab environment
+* OpenShift console URL: {openshift_console_url}
+* Gitea server URL: {gitea_console_url}
+
+== Environment setup
+
+=== Pre-workshop checklist
+
+Before starting, verify the following:
+
+* OpenShift console is accessible at `{openshift_console_url}`
+* You can log in with username `{user}` and password `{password}`
+* Gitea is accessible at `{gitea_console_url}`
+* The web terminal in the right panel responds to commands
+
+=== Setup validation
+
+Run these commands in the terminal tab on the right to verify your environment is ready:
+
+[source,bash]
+----
+# Verify you are logged in to OpenShift
+oc whoami
+
+# Verify OpenShift CLI version
+oc version --client
+
+# Verify Tekton CLI version
+tkn version
+
+# Verify OpenShift Pipelines operator is installed
+oc get csv -n openshift-operators | grep pipelines
+----
+
+Expected output:
+
+----
+system:serviceaccount:...  (or your username)
+
+Client Version: 4.20.x
+
+Client version: 0.38.x
+...
+
+openshift-pipelines-operator-rh.v1.20.x   Red Hat OpenShift Pipelines   1.20.x   ...   Succeeded
+----
+
+== Troubleshooting guide
+
+=== Common setup issues
+
+**Problem**: "Error from server (Forbidden)"
+
+**Solution**: Verify your username and project context:
+
+[source,bash]
+----
+oc whoami
+oc project
+----
+
+**Problem**: "Unable to connect to the server"
+
+**Solution**: Confirm you are logged in to the correct cluster:
+
+[source,bash]
+----
+oc login {openshift_console_url} -u {user} -p {password}
+----
+
+NOTE: Replace `{openshift_console_url}` with the API server URL if the console URL does not work for CLI login. The API URL typically uses port 6443.
+
+**Problem**: "`tkn` command not found"
+
+**Solution**: Use the web terminal in the right panel. It has all required tools pre-installed. Alternatively, install the Tekton CLI using:
+
+[source,bash]
+----
+# Download tkn binary from OpenShift mirror
+oc image extract registry.redhat.io/openshift-pipelines/pipelines-cli-tkn-rhel8:latest \
+  --path=/usr/bin/tkn:/usr/local/bin/ \
+  --confirm
+----
+
+**Problem**: "Pipelines operator status shows `Installing`"
+
+**Solution**: Wait 2 to 3 minutes for the operator to finish installing. Refresh the Installed Operators page in the console.
+
+=== During workshop support
+
+* Encourage participants to help each other
+* The terminal in the right panel has all required tools pre-installed
+* If a pipeline fails unexpectedly, check the pod logs using `oc describe pod` for detailed error messages
+
+== Follow-up resources
+
+=== Next steps for participants
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/{ocp_version}/html/pipelines/index[Red Hat OpenShift Pipelines {ocp_version} documentation^] -- Complete reference guide
+* link:https://tekton.dev/docs/[Tekton project documentation^] -- Upstream concepts and API reference
+* link:https://hub.tekton.dev/[Tekton Hub^] -- Community-built reusable Tasks
+* link:https://developers.redhat.com/topics/ci-cd[Red Hat Developer: CI/CD^] -- Learning resources and tutorials
+
+=== Additional learning paths
+
+* **Intermediate**: OpenShift Pipelines with Triggers and event-driven automation
+* **Advanced**: Secure software supply chain with Tekton Chains and SBOM generation
+* **Certification**: Red Hat Certified Specialist in OpenShift Administration (EX280)
+
+== Authors and contributors
+
+**Primary Author**: Coolstuff Store workshop team
+
+**Last Updated**: 2026-02-26
+
+**Workshop Version**: 1.0
+
+**Contact information**:
+
+* Workshop feedback: Submit via your lab portal
+* Technical questions: Contact your Red Hat account team
+* Content updates: Submit a pull request to the workshop repository

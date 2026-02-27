@@ -1,0 +1,96 @@
+= Workshop overview
+:toc:
+:toc-placement: preamble
+:icons: font
+
+include::partial$_attributes.adoc[]
+
+== Your role and mission
+
+You're a developer or platform engineer at Coolstuff Store, and you've been assigned to evaluate Red Hat OpenShift Pipelines for the company's new CI/CD initiative.
+
+Coolstuff Store needs to modernize its software delivery process. Currently, deployments are handled manually, causing slow release cycles, inconsistent environments, and friction between development and operations teams. Your manager has explained: "We need automated pipelines that can build, test, and deploy our applications reliably. I need you to evaluate OpenShift Pipelines and show me a working end-to-end CI/CD pipeline within the next 2 hours."
+
+**Your assignment**: Build and demonstrate a working CI/CD pipeline using Red Hat OpenShift Pipelines to automate Coolstuff Store's application delivery.
+
+**The objective**: Deliver a working pipeline that integrates with a Git repository and deploys an application automatically.
+
+== Success criteria for your mission
+
+By the end of this workshop, you'll have practical Red Hat OpenShift Pipelines skills to address Coolstuff Store's delivery requirements:
+
+* Understand Tekton concepts and architecture -- explain how Tasks, Pipelines, and PipelineRuns work together
+* Create and run custom Tasks and Pipelines -- reduce manual deployment steps with reusable automation
+* Integrate Git repositories into pipelines -- trigger automated builds from code changes
+* Monitor and troubleshoot pipeline executions -- identify and resolve failures faster
+
+**Technical outcome**: A working CI/CD pipeline that builds and deploys an application from a Git repository on OpenShift.
+
+**Business benefit**: Reduced deployment time and improved consistency across Coolstuff Store's environments.
+
+== Target audience
+
+This workshop is designed for:
+
+* Developers who want to automate application builds and deployments
+* Platform engineers looking to implement standardized CI/CD workflows
+* Anyone evaluating Red Hat OpenShift Pipelines for their organization
+
+== Prerequisites
+
+You should have:
+
+* Basic familiarity with containers or Kubernetes concepts
+* A web browser for accessing the OpenShift console
+* Access credentials provided in your lab environment
+* No prior Tekton or OpenShift Pipelines experience required
+
+== Coolstuff Store's project challenges
+
+**The situation**: Coolstuff Store needs to accelerate software delivery to keep pace with business demand and competitive pressure.
+
+**Project timeline**: 2-hour evaluation to demonstrate a working CI/CD solution.
+
+**Current challenges** (operational pain points):
+
+* **Manual deployments**: Every release requires direct operator involvement, and a single misconfiguration can cause downtime.
+* **Slow release cycles**: Average time from code commit to production is measured in days, not minutes.
+* **Inconsistent environments**: Different team members follow different deployment steps, leading to environment-specific failures.
+* **Limited visibility**: No centralized view of build and deployment status across projects.
+
+**The opportunity**: Red Hat OpenShift Pipelines provides a cloud native, Kubernetes-native CI/CD (Continuous Integration/Continuous Delivery) framework that can address these challenges. You've been selected to evaluate its feasibility for Coolstuff Store's use case.
+
+== Your vision of success
+
+If Red Hat OpenShift Pipelines proves effective for Coolstuff Store's use case, here are the potential improvements:
+
+**Immediate improvements** (within 1 sprint):
+
+* **Automated builds**: Every code push triggers a build automatically, removing manual steps.
+* **Consistent deployments**: Pipeline definitions are stored in Git, ensuring every deployment follows the same process.
+
+**Strategic benefits** (within 1 quarter):
+
+* **Faster releases**: Pipeline automation reduces deployment time from days to minutes.
+* **Better reliability**: Standardized pipelines with automated testing catch issues before they reach production.
+* **Developer self-service**: Developers can trigger pipelines without waiting for the operations team.
+
+**Success metric**: A working CI/CD pipeline demonstrated to stakeholders as a viable solution for Coolstuff Store's delivery challenges.
+
+== Common questions
+
+**"Do I need to know YAML to use OpenShift Pipelines?"**
+
+Modules 1 and 2 cover the YAML structure step by step, and the OpenShift console provides a visual pipeline editor as well.
+
+**"Can Tekton work with our existing Git repositories?"**
+
+Yes. Module 3 covers Git integration using the Gitea server in your lab environment. The same approach applies to GitHub, GitLab, and Bitbucket.
+
+**"What happens when a pipeline fails?"**
+
+Module 4 covers monitoring, log analysis, and troubleshooting pipeline failures with specific commands and console views.
+
+**"Is OpenShift Pipelines the same as Jenkins?"**
+
+Red Hat OpenShift Pipelines is built on Tekton, a Kubernetes-native CI/CD framework. Unlike Jenkins, Tekton runs each pipeline step as a Kubernetes pod, making it more portable and resource-efficient in container-based environments.

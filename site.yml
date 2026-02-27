@@ -1,0 +1,21 @@
+site:
+  title: "Building Pipelines using Tekton on OpenShift"
+  start_page: modules::index.adoc
+
+content:
+  sources:
+    - url: .
+      branches: HEAD
+      start_path: content
+      worktrees: true
+ui:
+  bundle:
+    url: https://github.com/rhpds/rhdp_showroom_theme/releases/download/v0.0.1/ui-bundle.zip
+    snapshot: true
+  supplemental_files:
+    - dir: ./content/supplemental-ui
+output:
+  dir: ./www
+asciidoc:
+  attributes:
+    source-highlighter: rouge

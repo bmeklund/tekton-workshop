@@ -1,0 +1,53 @@
+= Building pipelines using Tekton on OpenShift
+
+include::partial$_attributes.adoc[]
+
+Welcome to the Building Pipelines using Tekton on OpenShift workshop!
+
+== What you'll learn
+
+In this workshop, you will:
+
+* Understand Tekton core concepts: Tasks, Pipelines, PipelineRuns, and the overall architecture
+* Create and run Tasks and Pipelines using both the OpenShift CLI and web console
+* Integrate a Git repository into a pipeline for automated builds
+* Monitor and troubleshoot pipeline executions to resolve failures quickly
+
+== Who this is for
+
+This workshop is designed for developers and platform engineers who want to understand Tekton concepts and build working CI/CD pipelines on OpenShift.
+
+**Experience level**: Beginner to Intermediate
+
+== Prerequisites
+
+Before starting this workshop, you should have:
+
+* Basic familiarity with containers or Kubernetes concepts
+* A web browser to access the OpenShift console
+* Credentials provided in your lab environment (shown in the right panel)
+
+== Workshop environment
+
+You will work on a pre-configured OpenShift {ocp_version} multinode cluster with Red Hat OpenShift Pipelines {pipelines_version} already installed. No setup is required on your part.
+
+You will have access to:
+
+* OpenShift console: {openshift_console_url}
+* Username: {user}
+* Password: {password}
+* Gitea Git server: {gitea_console_url}
+* Gitea username: {gitea_user}
+* Gitea password: {gitea_password}
+
+NOTE: All credentials and environment details are displayed in the lab interface on the right side of your screen.
+
+== Estimated time
+
+This workshop will take approximately **2 hours** to complete.
+
+You can work at your own pace.
+
+== Let's get started!
+
+Click on **Workshop overview** in the navigation to begin your learning journey.

@@ -1,0 +1,106 @@
+= Conclusion and next steps
+
+include::partial$_attributes.adoc[]
+
+Congratulations! You have completed the Building Pipelines using Tekton on OpenShift workshop.
+
+Coolstuff Store came in with manual deployments, slow release cycles, and no visibility into build status. You've left them with a fully automated CI/CD system: reusable Tasks, an end-to-end Pipeline pulling from a Git repository, monitoring tools for diagnosing failures, and Pipelines as Code automatically triggering runs on every push -- all without manual cluster intervention.
+
+== What you've learned
+
+Throughout this workshop, you gained hands-on experience with:
+
+* How Tekton Tasks encapsulate reusable CI/CD steps and execute as Kubernetes pods, with TaskRuns providing each execution record
+* How multiple steps within a Task run sequentially and share data through a Workspace, with Parameters making the same Task reusable across applications and versions
+* How Pipelines chain Tasks using `runAfter` without tightly coupling them, with Pipeline Parameters and Workspace mappings flowing values down to each stage
+* How the OpenShift console visual pipeline graph and the `tkn` CLI give operators and developers instant visibility into pipeline status at every stage
+* How to diagnose failed pipeline runs using `tkn pipelinerun describe` and step-level logs, and how to recover by fixing the underlying cause and re-running
+* How Pipelines as Code stores pipeline definitions in the `.tekton/` directory alongside application code, triggers runs automatically on Git events, and gives developers GitOps PR commands to control execution without touching the cluster
+
+You now have the skills to design, build, run, and maintain CI/CD pipelines on Red Hat OpenShift Pipelines for any application.
+
+== Key takeaways
+
+The most important concepts to carry forward:
+
+. **Tasks are the atomic unit** -- A Task defines what to do; a TaskRun executes it. Parameters make Tasks reusable; Workspaces let steps share data. Design Tasks to do 1 thing well and they become building blocks for any pipeline.
+
+. **Pipelines orchestrate without coupling** -- `runAfter` defines execution order without creating direct dependencies between Task definitions. The same Task can appear in multiple Pipelines, and changing 1 Task does not require updating all the Pipelines that use it.
+
+. **The diagnostic pattern is consistent** -- Whether a TaskRun or a PipelineRun fails, the workflow is the same: `list` to find the failure, `describe` to identify which task and why, `logs` to read the step-level output. This pattern applies to every Tekton resource.
+
+. **Storage is separate from logic** -- Workspaces declared on Tasks and Pipelines are bound to actual storage at runtime by TaskRuns and PipelineRuns. The same Task works with a PVC in staging and an `emptyDir` in a quick CI run. Never hardcode storage into Task definitions.
+
+. **Pipelines as Code closes the loop** -- Storing `.tekton/` templates in Git makes CI/CD changes reviewable, versionable, and auditable. Webhook-triggered runs and GitOps commands (`/retest`, `/cancel`) mean developers interact with CI/CD entirely within their Git workflow.
+
+== Next steps
+
+=== Recommended topics to explore
+
+Build on what you've learned with these related areas:
+
+* **OpenShift GitOps with Argo CD** -- Pair your CI pipeline with a GitOps-based CD workflow that automatically syncs Kubernetes resources from Git to the cluster. CI builds the artifact; Argo CD deploys it.
+* **Container image builds with Buildah** -- Extend your pipeline with a build stage that uses the Buildah ClusterTask (or link:https://hub.tekton.dev/tekton/task/buildah[Tekton Hub `buildah` Task^]) to build and push a container image to a registry.
+* **OpenShift Pipelines Triggers** -- Before Pipelines as Code, Tekton Triggers handled webhook-to-PipelineRun conversion. Understanding Triggers helps when reading existing cluster configurations and when PAC is not available.
+* **Secure software supply chain with Tekton Chains** -- Automatically sign pipeline artifacts and generate Software Bill of Materials (SBOM) entries for every build. Built into Red Hat OpenShift Pipelines.
+
+=== Practice projects
+
+Put your new skills to work with these hands-on projects:
+
+. **Add a container image build stage** -- Extend the `coolstuff-build-pipeline` from Module 3 with a fourth Task that builds a container image using Buildah and pushes it to the OpenShift internal registry. Use a Workspace to pass the cloned source from `clone-source` through to the build stage.
+
+. **Add a deploy stage** -- Create a `deploy-app` Task that runs `oc rollout restart deployment/coolstuff-app` after a successful image build. Chain it as the final stage in the pipeline so a passing build automatically updates the running application.
+
+. **Create a pull request pipeline** -- Add a second file to `.tekton/`, named `pr-pipeline.yaml`, that triggers only on `pull_request` events and runs only the validate and test stages (skipping package and deploy). This gives developers fast feedback on pull requests without triggering a full deployment.
+
+. **Add pipeline notifications** -- Create a `notify-slack` or `notify-email` Task that runs in the `finally` clause of a Pipeline to report the pipeline result, regardless of whether it succeeded or failed. Tekton's `finally` tasks always run even when the pipeline fails.
+
+=== Certification paths
+
+* link:https://www.redhat.com/en/services/training/ex280-red-hat-certified-specialist-in-openshift-administration-exam[Red Hat Certified Specialist in OpenShift Administration (EX280)^] -- Validates cluster administration skills including operator management and workload deployment
+* link:https://www.redhat.com/en/services/training/ex288-red-hat-certified-specialist-in-openshift-application-development-exam[Red Hat Certified Specialist in OpenShift Application Development (EX288)^] -- Validates application deployment and CI/CD skills on OpenShift
+
+== References
+
+All references used across this workshop, organized by category.
+
+=== Official Red Hat documentation
+
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/{ocp_version}/html/pipelines/index[Red Hat OpenShift Pipelines {ocp_version} documentation^] -- Complete reference for OpenShift Pipelines installation, configuration, Tasks, Pipelines, and Triggers. Used in: Workshop details, all modules.
+
+=== Tekton upstream documentation
+
+* link:https://tekton.dev/docs/[Tekton documentation^] -- Upstream project documentation covering core concepts: Tasks, Pipelines, TaskRuns, PipelineRuns, Workspaces, and Parameters. Used in: Modules 1, 2.
+* link:https://tekton.dev/docs/operator/openshiftpipelinesascode/[OpenShift Pipelines as Code operator documentation^] -- Configuration reference for the `OpenShiftPipelinesAsCode` custom resource and PAC controller settings. Used in: Module 5.
+* link:https://tekton.dev/[Tekton project home^] -- Overview of the Tekton ecosystem: Pipelines, Triggers, Chains, Dashboard, and Hub. Used in: Module 1.
+
+=== Pipelines as Code
+
+* link:https://pipelinesascode.com/[Pipelines as Code project^] -- Official documentation for Pipelines as Code: getting started, Repository CRD, `.tekton/` authoring, supported Git providers, and configuration. Used in: Module 5.
+* link:https://pipelinesascode.com/docs/guide/gitops_commands/[Pipelines as Code GitOps commands reference^] -- Full reference for `/retest`, `/test`, `/cancel`, and `/ok-to-test` PR comment commands including syntax, permissions, and advanced options. Used in: Module 5.
+
+=== Red Hat Developer resources
+
+* link:https://hub.tekton.dev/[Tekton Hub^] -- Community catalog of reusable Tasks including `git-clone`, `buildah`, `kaniko`, and many more. Referenced in: Workshop details, Module 3.
+* link:https://developers.redhat.com/topics/ci-cd[Red Hat Developer: CI/CD^] -- Learning resources, blog posts, and tutorials on CI/CD with Red Hat technologies. Referenced in: Workshop details.
+
+== Share your feedback
+
+Help improve this workshop for the next team:
+
+* What exercise was most useful for your work?
+* Were there any steps that were unclear or took significantly longer than expected?
+* What topics would you like to see added or expanded in a future version?
+
+Submit feedback via your lab portal or contact your Red Hat account team.
+
+== Thank you
+
+Thank you for completing this workshop. Coolstuff Store's team -- and yours -- now has a solid foundation for building and maintaining CI/CD pipelines on Red Hat OpenShift Pipelines.
+
+---
+
+**Workshop**: Building Pipelines using Tekton on OpenShift +
+**Platform**: Red Hat OpenShift Pipelines {pipelines_version} on OpenShift {ocp_version} +
+**Platform**: Red Hat Showroom
