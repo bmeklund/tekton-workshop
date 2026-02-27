@@ -272,6 +272,8 @@ coolstuff-pipeline-run-02    20 minutes ago   2m30s      Succeeded
 ...
 ----
 
+=== Verify
+
 . Describe the failed PipelineRun to identify which task failed and why:
 +
 [source,bash]
