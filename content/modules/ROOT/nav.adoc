@@ -1,5 +1,4 @@
 .Building pipelines using Tekton on OpenShift
-* xref:index.adoc[Home]
 * xref:01-overview.adoc[Workshop overview]
 * xref:02-details.adoc[Workshop details]
 * xref:03-module-01-tekton-fundamentals.adoc[Module 1: Tekton fundamentals]

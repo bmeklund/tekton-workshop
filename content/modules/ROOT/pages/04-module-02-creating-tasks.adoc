@@ -163,6 +163,8 @@ oc get task build-coolstuff-app
 * Task name is `build-coolstuff-app`
 * `tkn task describe` shows 3 steps, 2 params, 1 workspace
 
+Also check the task in the OpenShift console in **Pipelines** then **Tasks**
+
 [#exercise-2]
 == Exercise 2: Create a PVC and run the Task
 
@@ -199,7 +201,7 @@ Expected output:
 persistentvolumeclaim/workshop-pvc created
 ----
 
-. Confirm the PVC is bound:
+. Confirm the PVC is there:
 +
 [source,sh,role="copypaste"]
 ----
@@ -210,7 +212,7 @@ Expected output:
 +
 ----
 NAME           STATUS   VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-workshop-pvc   Bound    ...      1Gi        RWO            ...            10s
+workshop-pvc   Pending    ...      1Gi        RWO            ...            10s
 ----
 +
 NOTE: OpenShift uses dynamic storage provisioning. The PVC moves from `Pending` to `Bound` automatically once storage is allocated. If it remains in `Pending` for more than 1 minute, see the troubleshooting section below.
@@ -275,10 +277,9 @@ Expected output:
 +
 The `-f` flag follows the log stream and returns to the prompt when the TaskRun finishes.
 
-. View the TaskRun detail in the OpenShift console. In the **Developer** perspective, navigate to **Pipelines**, then **TaskRuns**. Click `build-coolstuff-run-01` to see each step and its log output side by side.
+. View the TaskRun detail in the OpenShift console. Navigate to **Pipelines**, then **Tasks**. In the central view Click **TaskRuns** to see the different executions of tasks. Click **build-coolstuff-run-01** to see its log output.
 
-// TODO: Add screenshot of the TaskRun detail page showing all 3 steps with log output
-image::taskrun-multistep-logs.png[OpenShift console TaskRun detail showing validate, test, and package steps with their log output,link=self,window=blank,width=700,title="Multi-step TaskRun with data flowing through the Workspace"]
+image::taskrun-multistep-logs.png[OpenShift console TaskRun detail showing validate, test, and package steps with their log output,link=self,window=blank,width=700,title="Multi-step TaskRun with logs"]
 
 === Verify
 
@@ -319,7 +320,7 @@ One of the main reasons to define Tasks separately from TaskRuns is reusability.
 
 NOTE: Both TaskRuns in this exercise use the same PVC, so run them sequentially. The first TaskRun must finish before you start the second, because a ReadWriteOnce PVC can only be mounted by 1 pod at a time.
 
-. Create a second TaskRun with different parameter values:
+. Create a second **TaskRun** with different parameter values:
 +
 [source,sh,role="copypaste"]
 ----
@@ -387,14 +388,18 @@ build-coolstuff-run-01    2 minutes ago   18s        Succeeded
 hello-coolstuff-run-01    10 minutes ago  12s        Succeeded
 ----
 
-. View the TaskRuns list in the **Developer** perspective under **Pipelines**, then **TaskRuns**.
+. View the TaskRuns list in the OpenShift console under **Pipelines**, then **Tasks**.
 
-// TODO: Add screenshot of the TaskRuns list in the OpenShift console showing both build TaskRuns with Succeeded status
+[NOTE]
+====
+Note that the two different TaskRuns use the same underlying Task.
+====
+
 image::taskrun-list-console.png[OpenShift console TaskRuns list showing build-coolstuff-run-01 and build-coolstuff-run-02 both with green Succeeded status badges,link=self,window=blank,width=700,title="TaskRuns list demonstrating Task reuse with different parameters"]
 
 === Verify
 
-Confirm both TaskRuns completed successfully:
+Confirm both TaskRuns completed successfully using the cli too:
 
 [source,sh,role="copypaste"]
 ----
@@ -501,8 +506,3 @@ By completing this module, you should now understand:
 * The role of Parameters in making Tasks reusable without modifying the Task definition
 * How Workspaces decouple storage configuration from Task logic, allowing the same Task to run in different environments
 * The pattern of defining a Task once and executing it many times with different TaskRuns, which is the foundation of scalable CI/CD automation
-
-== Assets needed
-
-. `content/modules/ROOT/assets/images/taskrun-multistep-logs.png` -- OpenShift console TaskRun detail showing validate, test, and package steps with their log output (clickable full-size)
-. `content/modules/ROOT/assets/images/taskrun-list-console.png` -- OpenShift console TaskRuns list showing both build TaskRuns with Succeeded status (clickable full-size)
