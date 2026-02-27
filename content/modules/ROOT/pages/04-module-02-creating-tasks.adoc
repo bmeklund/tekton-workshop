@@ -43,7 +43,7 @@ You'll create a Task called `build-coolstuff-app` that simulates the 3-stage bui
 
 . In the **Terminal** tab, confirm you are in the correct project:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc project tekton-workshop
 ----
@@ -56,7 +56,7 @@ Now using project "tekton-workshop" on server "...".
 
 . Create the Task definition file:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 cat > build-coolstuff-task.yaml << 'EOF'
 apiVersion: tekton.dev/v1
@@ -112,7 +112,7 @@ EOF
 
 . Apply the Task:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f build-coolstuff-task.yaml
 ----
@@ -125,7 +125,7 @@ task.tekton.dev/build-coolstuff-app created
 
 . Inspect the Task structure using the Tekton CLI:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn task describe build-coolstuff-app
 ----
@@ -155,7 +155,7 @@ Steps
 
 Confirm the Task is present and has the correct structure:
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get task build-coolstuff-app
 ----
@@ -170,7 +170,7 @@ With the Task defined, you need to provide a storage backend for the Workspace. 
 
 . Create a PVC definition:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 cat > workshop-pvc.yaml << 'EOF'
 apiVersion: v1
@@ -188,7 +188,7 @@ EOF
 
 . Apply the PVC:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f workshop-pvc.yaml
 ----
@@ -201,7 +201,7 @@ persistentvolumeclaim/workshop-pvc created
 
 . Confirm the PVC is bound:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get pvc workshop-pvc
 ----
@@ -217,7 +217,7 @@ NOTE: OpenShift uses dynamic storage provisioning. The PVC moves from `Pending` 
 
 . Create a TaskRun that binds the Workspace to the PVC:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 cat > build-taskrun-01.yaml << 'EOF'
 apiVersion: tekton.dev/v1
@@ -241,7 +241,7 @@ EOF
 
 . Apply the TaskRun:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f build-taskrun-01.yaml
 ----
@@ -254,7 +254,7 @@ taskrun.tekton.dev/build-coolstuff-run-01 created
 
 . Follow the logs until the TaskRun completes:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn taskrun logs build-coolstuff-run-01 -f
 ----
@@ -284,7 +284,7 @@ image::taskrun-multistep-logs.png[OpenShift console TaskRun detail showing valid
 
 Confirm all 3 steps completed and the TaskRun succeeded:
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get taskrun build-coolstuff-run-01 \
   -o jsonpath='{.status.conditions[0].reason}'
@@ -296,7 +296,7 @@ Expected output:
 Succeeded
 ----
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get taskrun build-coolstuff-run-01 \
   -o jsonpath='{.status.steps[*].name}'
@@ -321,7 +321,7 @@ NOTE: Both TaskRuns in this exercise use the same PVC, so run them sequentially.
 
 . Create a second TaskRun with different parameter values:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 cat > build-taskrun-02.yaml << 'EOF'
 apiVersion: tekton.dev/v1
@@ -345,14 +345,14 @@ EOF
 
 . Apply the second TaskRun:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f build-taskrun-02.yaml
 ----
 
 . Follow the logs:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn taskrun logs build-coolstuff-run-02 -f
 ----
@@ -373,7 +373,7 @@ Expected output:
 
 . List all TaskRuns in the project:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn taskrun list
 ----
@@ -396,7 +396,7 @@ image::taskrun-list-console.png[OpenShift console TaskRuns list showing build-co
 
 Confirm both TaskRuns completed successfully:
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn taskrun list
 ----
@@ -413,7 +413,7 @@ tkn taskrun list
 
 . Check available StorageClasses:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get storageclass
 ----
@@ -429,14 +429,14 @@ oc get storageclass
 
 . Verify the Task exists in the project:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get tasks
 ----
 
 . If missing, re-apply:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f build-coolstuff-task.yaml
 ----
@@ -453,7 +453,7 @@ oc apply -f build-coolstuff-task.yaml
 
 **Solution**: The PVC uses `ReadWriteOnce`, which allows only 1 pod to mount it at a time. Wait for `build-coolstuff-run-01` to reach `Succeeded` before applying `build-taskrun-02.yaml`.
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get taskrun build-coolstuff-run-01 -w
 ----
@@ -464,7 +464,7 @@ oc get taskrun build-coolstuff-run-01 -w
 
 **Solution**: Confirm the TaskRun name matches exactly, including case:
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn taskrun list
 ----

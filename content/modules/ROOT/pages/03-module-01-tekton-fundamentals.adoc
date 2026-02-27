@@ -24,15 +24,22 @@ By the end of this module, you'll be able to:
 
 Red Hat OpenShift Pipelines is a cloud native CI/CD (Continuous Integration/Continuous Delivery) solution built on link:https://tekton.dev/[Tekton^], an open source project under the Continuous Delivery Foundation. Tekton runs CI/CD workflows as Kubernetes-native resources, making pipelines portable, reproducible, and manageable alongside your application code.
 
-According to the link:https://tekton.dev/docs/[Tekton documentation^], the 4 core building blocks are:
+The core building blocks of Tekton are:
 
-* **Task**: A reusable unit of work containing 1 or more Steps. Each Step runs inside a container image. Examples include cloning a Git repository, building a container image, or running tests.
+* **Step**: A step is an operation in a CI/CD workflow, such as running some unit tests for a Python web app, or the compilation of a Java program. Tekton performs each step with a container image you provide. For example, you may use the official Go image to compile a Go program in the same manner as you would on your local workstation (go build).
+* **Task**: A reusable unit of work containing 1 or more Steps running in order. Tekton runs a task in the form of a Kubernetes pod, each Step runs inside a container image. Examples include cloning a Git repository, building a container image, or running tests.
+* **Pipeline**: An collection of Tasks that forms a CI/CD workflow. Pipelines can run Tasks sequentially or in parallel and pass data between them using Workspaces and Parameters.
+
+Tasks and pipelines are specified as custom resources in a Kubernetes cluster.
+
+image::concept-tasks-pipelines.png[Diagram showing the relationship between Tekton Tasks, Pipelines, TaskRuns, and PipelineRuns,link=self,window=blank,width=700,title="Tekton component relationships"]
+
+Related to these components we also have the following types:
+
+* **PipelineRun**: A specific single execution of a Pipeline. A PipelineRun tracks the status of every Task in the Pipeline and stores the overall result.You can view the status of your CI/CD workflow, including the specifics of each task execution with pipelineRuns.
 * **TaskRun**: A single execution of a Task. When you trigger a Task, Tekton creates a TaskRun resource that tracks the execution status and stores its output.
-* **Pipeline**: An ordered collection of Tasks that forms a CI/CD workflow. Pipelines can run Tasks sequentially or in parallel and pass data between them using Workspaces and Parameters.
-* **PipelineRun**: A single execution of a Pipeline. A PipelineRun tracks the status of every Task in the Pipeline and stores the overall result.
 
-// TODO: Add architecture diagram showing Task, Pipeline, TaskRun, and PipelineRun relationships
-image::tekton-architecture.png[Diagram showing the relationship between Tekton Tasks, Pipelines, TaskRuns, and PipelineRuns,link=self,window=blank,width=700,title="Tekton component relationships"]
+image::concept-runs.png[Diagram showing the relationship between Pipeline and PipelineRun,link=self,window=blank,width=700,title="Tekton component relationships"]
 
 NOTE: Red Hat OpenShift Pipelines {pipelines_version} also includes Triggers, Workspaces, and ClusterTasks, which you'll explore in later modules.
 
@@ -48,22 +55,21 @@ Coolstuff Store's OpenShift cluster has Red Hat OpenShift Pipelines {pipelines_v
 * **Username**: `{user}`
 * **Password**: `{password}`
 
-. After logging in, click the perspective switcher at the top left of the console. It may show **Administrator** or **Developer**. Select **Developer**.
+. After logging in, make sure the perspective switcher at the top left of the console show **Administrator**.
 
-. In the left navigation menu, click **Pipelines**. This menu confirms that OpenShift Pipelines is active in your cluster. The list is empty for now. You'll populate it in the next exercises.
+. In the left navigation menu, click **Pipelines** and then **Pipelines** again. This menu confirms that OpenShift Pipelines is active in your cluster. The list is empty for now and **No Pipelines found** is shown in the main view. You'll populate it in the next exercises.
 
-. Switch back to the **Administrator** perspective. Navigate to **Operators**, then **Installed Operators**.
+. Navigate to **Ecosystem** and then **Installed Operators**.
 
 . Search for **OpenShift Pipelines** in the filter box. Confirm the operator shows a phase of **Succeeded**.
 
-// TODO: Add screenshot of the Installed Operators page showing OpenShift Pipelines with Succeeded status
 image::pipelines-operator-installed.png[OpenShift console showing the OpenShift Pipelines operator with Succeeded status in the Installed Operators list,link=self,window=blank,width=700,title="OpenShift Pipelines operator installed and ready"]
 
 === Verify
 
 Confirm the operator status from the terminal. Click the **Terminal** tab in the right panel and run:
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get csv -n openshift-operators | grep pipelines
 ----
@@ -84,7 +90,7 @@ Now that OpenShift Pipelines is confirmed, you'll create your first Tekton Task.
 
 . In the **Terminal** tab, log in to OpenShift using your credentials:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc login {openshift_console_url} -u {user} -p {password}
 ----
@@ -93,7 +99,7 @@ NOTE: If the console URL does not work for CLI login, ask your facilitator for t
 
 . Create a new project for this workshop:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc new-project tekton-workshop
 ----
@@ -106,7 +112,7 @@ Now using project "tekton-workshop" on server "...".
 
 . Create the Task definition file:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 cat > hello-task.yaml << 'EOF'
 apiVersion: tekton.dev/v1
@@ -132,7 +138,7 @@ EOF
 
 . Apply the Task to your cluster:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f hello-task.yaml
 ----
@@ -145,7 +151,7 @@ task.tekton.dev/hello-coolstuff created
 
 . Verify the Task was created:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get tasks
 ----
@@ -161,7 +167,7 @@ hello-coolstuff    10s
 
 Inspect the Task definition to confirm it was stored correctly:
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc describe task hello-coolstuff
 ----
@@ -177,7 +183,7 @@ Defining a Task tells Tekton what to do. To actually execute it, you create a Ta
 
 . Create a TaskRun definition that references your Task:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 cat > hello-taskrun.yaml << 'EOF'
 apiVersion: tekton.dev/v1
@@ -195,7 +201,7 @@ EOF
 
 . Apply the TaskRun to trigger execution:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f hello-taskrun.yaml
 ----
@@ -208,7 +214,7 @@ taskrun.tekton.dev/hello-coolstuff-run-01 created
 
 . Watch the TaskRun status in real time:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get taskrun hello-coolstuff-run-01 -w
 ----
@@ -224,7 +230,7 @@ Press `Ctrl+C` to stop watching once the status shows `Succeeded`.
 
 . View the execution logs using the Tekton CLI:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn taskrun logs hello-coolstuff-run-01
 ----
@@ -237,16 +243,17 @@ Expected output:
 [print-message] Thu Feb 26 00:00:00 UTC 2026
 ----
 
-. View the TaskRun in the OpenShift console. In the **Developer** perspective, navigate to **Pipelines**, then **TaskRuns**. Click `hello-coolstuff-run-01` to see a visual view of each step and its status.
+. View the TaskRun in the OpenShift console. 
+  Navigate to **Pipelines**, then **Tasks** and in the central view click **TaskRuns**. In the central view you can now see the status(Succeeded) and more details of your TaskRun.  
+  Click `hello-coolstuff-run-01` if you want to look at even more details.
 
-// TODO: Add screenshot of the TaskRun detail page in the OpenShift console showing Succeeded status
 image::taskrun-succeeded.png[OpenShift console showing the hello-coolstuff-run-01 TaskRun with a green Succeeded status badge and step logs,link=self,window=blank,width=700,title="TaskRun completed successfully"]
 
 === Verify
 
 Confirm the TaskRun completed with a Succeeded status:
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get taskrun hello-coolstuff-run-01 \
   -o jsonpath='{.status.conditions[0].reason}'
@@ -270,14 +277,14 @@ Succeeded
 
 . Check the pod status:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get pods -l tekton.dev/taskRun=hello-coolstuff-run-01
 ----
 
 . If the pod shows `ImagePullBackOff`, view the events:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc describe pod -l tekton.dev/taskRun=hello-coolstuff-run-01
 ----
@@ -292,7 +299,7 @@ oc describe pod -l tekton.dev/taskRun=hello-coolstuff-run-01
 
 . Verify you are logged in and in the correct project:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc whoami
 oc project
@@ -300,14 +307,14 @@ oc project
 
 . If you are in the wrong project, switch to it:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc project tekton-workshop
 ----
 
 . If the project does not exist, create it again:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc new-project tekton-workshop
 oc apply -f hello-task.yaml
@@ -321,14 +328,14 @@ oc apply -f hello-task.yaml
 
 . Check the TaskRun logs for error details:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn taskrun logs hello-coolstuff-run-01
 ----
 
 . Check the TaskRun events for additional context:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc describe taskrun hello-coolstuff-run-01
 ----
@@ -344,7 +351,7 @@ oc describe taskrun hello-coolstuff-run-01
 . Confirm you are using the web terminal in the right panel. It has `tkn` pre-installed.
 . If you are in a different terminal, fall back to the `oc` CLI for logs:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc logs -l tekton.dev/taskRun=hello-coolstuff-run-01 --all-containers
 ----
@@ -357,14 +364,14 @@ oc logs -l tekton.dev/taskRun=hello-coolstuff-run-01 --all-containers
 
 . Confirm you are in the correct namespace:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc project
 ----
 
 . If needed, re-create the project and re-apply the Task:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc new-project tekton-workshop
 oc apply -f hello-task.yaml
@@ -400,9 +407,3 @@ By completing this module, you should now understand:
 * The relationship between a Task and a TaskRun: the Task defines what to do, the TaskRun executes it
 * How to create and manage Tekton resources using the `oc` and `tkn` CLIs and the OpenShift console
 * Why cloud native CI/CD built on Kubernetes primitives provides better portability and consistency than manual deployment processes
-
-== Assets needed
-
-. `content/modules/ROOT/assets/images/tekton-architecture.png` -- Architecture diagram showing the relationship between Tasks, Pipelines, TaskRuns, and PipelineRuns (clickable full-size)
-. `content/modules/ROOT/assets/images/pipelines-operator-installed.png` -- OpenShift console screenshot showing the OpenShift Pipelines operator with Succeeded status (clickable full-size)
-. `content/modules/ROOT/assets/images/taskrun-succeeded.png` -- OpenShift console screenshot showing a completed TaskRun with green Succeeded status and step logs (clickable full-size)

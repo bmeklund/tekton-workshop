@@ -23,6 +23,7 @@ By the end of this workshop, you'll have practical Red Hat OpenShift Pipelines s
 * Create and run custom Tasks and Pipelines -- reduce manual deployment steps with reusable automation
 * Integrate Git repositories into pipelines -- trigger automated builds from code changes
 * Monitor and troubleshoot pipeline executions -- identify and resolve failures faster
+* Try out and work with pipelines as code -- storing and triggering flows from a git repo
 
 **Technical outcome**: A working CI/CD pipeline that builds and deploys an application from a Git repository on OpenShift.
 

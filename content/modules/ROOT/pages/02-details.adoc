@@ -7,12 +7,13 @@ include::partial$_attributes.adoc[]
 
 == Timing and schedule
 
-=== Full workshop (2 hours)
+=== Full workshop (2 - 2.5 hours)
 
 * **Module 1**: Tekton fundamentals (30 minutes)
 * **Module 2**: Creating Tasks and TaskRuns (35 minutes)
 * **Module 3**: Building your first pipeline (35 minutes)
 * **Module 4**: Monitoring and troubleshooting (20 minutes)
+* **Module 5**: Pipeline as code (30 minutes)
 
 === Abbreviated workshop (1 hour)
 

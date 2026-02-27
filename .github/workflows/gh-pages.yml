@@ -7,6 +7,8 @@ on:
     paths-ignore:
       - "README.adoc"
       - ".gitignore"
+env:
+  SITE_DIR: "gh-pages"
 
 permissions:
   pages: write
@@ -19,6 +21,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -35,7 +40,8 @@ jobs:
       - name: upload pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: www
+          name: site
+          path: "${{ github.workspace }}/${{ env.SITE_DIR }}"
   deploy:
     needs: build
     environment:
