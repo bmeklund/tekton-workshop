@@ -39,14 +39,14 @@ You'll create a Pipeline that chains 2 Tasks: the `build-coolstuff-app` Task fro
 
 . In the **Terminal** tab, confirm you are in the correct project:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc project tekton-workshop
 ----
 
 . Create the `summarize-build` Task. It reads the artifact created by the build stage and prints a final build report:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 cat > summarize-build-task.yaml << 'EOF'
 apiVersion: tekton.dev/v1
@@ -89,7 +89,7 @@ EOF
 
 . Apply the Task:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f summarize-build-task.yaml
 ----
@@ -104,7 +104,7 @@ task.tekton.dev/summarize-build created
 
 . Create the `coolstuff-build-pipeline` Pipeline definition. It chains `build-coolstuff-app` followed by `summarize-build`, passing Parameters and the shared Workspace through both Tasks:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 cat > coolstuff-pipeline.yaml << 'EOF'
 apiVersion: tekton.dev/v1
@@ -156,7 +156,7 @@ NOTE: The workspace name in each task entry (`name: source`) is the name defined
 
 . Apply the Pipeline:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f coolstuff-pipeline.yaml
 ----
@@ -169,7 +169,7 @@ pipeline.tekton.dev/coolstuff-build-pipeline created
 
 . Inspect the Pipeline structure:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn pipeline describe coolstuff-build-pipeline
 ----
@@ -198,13 +198,18 @@ Tasks
 
 Confirm the Pipeline is registered in the cluster:
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get pipeline coolstuff-build-pipeline
 ----
 
 * Pipeline name is `coolstuff-build-pipeline`
 * `tkn pipeline describe` shows 2 tasks with correct `runAfter` ordering
+
+Open the OpenShift console and view the pipeline in the Pipelines section. Click **Pipelines** then **Pipelines** again and in the center view click the **coolstuff-build-pipeline** to see a visual overview of the pipeline as well as more details about it.
+
+image::pipeline-overview.png[OpenShift console showing the coolstuff-build-pipeline,link=self,window=blank,width=700,title="Pipeline graph showing"]
+
 
 [#exercise-2]
 == Exercise 2: Run the Pipeline with a PipelineRun
@@ -213,7 +218,7 @@ With the Pipeline defined, you'll create a PipelineRun to execute it. The Pipeli
 
 . Create the PipelineRun definition:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 cat > coolstuff-pipelinerun-01.yaml << 'EOF'
 apiVersion: tekton.dev/v1
@@ -237,7 +242,7 @@ EOF
 
 . Apply the PipelineRun:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f coolstuff-pipelinerun-01.yaml
 ----
@@ -250,7 +255,7 @@ pipelinerun.tekton.dev/coolstuff-pipeline-run-01 created
 
 . Follow the logs for the entire pipeline:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn pipelinerun logs coolstuff-pipeline-run-01 -f
 ----
@@ -279,16 +284,15 @@ Expected output:
 +
 The log prefix format is `[task-name : step-name]`, which shows exactly which task and step produced each line.
 
-. While the PipelineRun is running (or after it completes), view the visual pipeline graph. In the **Developer** perspective, navigate to **Pipelines**, then select `coolstuff-build-pipeline`. Click on the `coolstuff-pipeline-run-01` run to see the visual graph.
+. While the PipelineRun is running (or after it completes), view the visual pipeline graph. In the OpenShift console, fold out the **Pipelines** section, then click **Pipelines** again and then select the **PipelineRuns** tab before clicking on the `coolstuff-pipeline-run-01`. Here you can see the visual graph of the executed PiplineRun.
 
-// TODO: Add screenshot of the pipeline graph in the OpenShift console showing build and summarize tasks with green Succeeded status
 image::pipeline-graph-succeeded.png[OpenShift console showing the coolstuff-build-pipeline graph with build and summarize task nodes both showing green Succeeded status,link=self,window=blank,width=700,title="Pipeline graph showing end-to-end execution from build to summary"]
 
 === Verify
 
 Confirm the PipelineRun completed successfully:
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get pipelinerun coolstuff-pipeline-run-01 \
   -o jsonpath='{.status.conditions[0].reason}'
@@ -300,7 +304,7 @@ Expected output:
 Succeeded
 ----
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn pipelinerun list
 ----
@@ -316,6 +320,13 @@ coolstuff-pipeline-run-01  1 minute ago   35s        Succeeded
 * Log output shows both `build` and `summarize` task logs
 * The pipeline graph in the console shows both nodes with a green status
 
+View the visual output of the pipeline run in the OpenShift console. Fold out the **Pipelines** section, then click **Pipelines** again and then select the **PipelineRuns** tab before clicking on the `coolstuff-pipeline-run-01`.
+
+Click on the **Logs** tab and view the logs from the two tasks.
+
+image::pipeline-run-logs.png[OpenShift console showing the coolstuff-build-pipeline logs,link=self,window=blank,width=700,title="Pipeline run showing the logs for each Task"]
+
+
 [#exercise-3]
 == Exercise 3: Add a Git source stage to the Pipeline
 
@@ -323,32 +334,44 @@ Coolstuff Store's pipeline currently starts by assuming the source code is alrea
 
 === Create a repository in Gitea
 
-. Click the **Gitea** tab in the right panel to open the Gitea web interface. Log in with:
+. Click the **Gitea** tab in the right panel to open the Gitea web interface. In the right top corner click **Sign In**
+
+image::gitea-sign-in.png[Gitea start page,link=self,window=blank,width=700,title="Gitea's start page with sign in"]
+
+. Log in with your user:
 
 * **Username**: `{gitea_user}`
 * **Password**: `{gitea_password}`
 
 . In the top right corner, click the **+** icon and select **New repository**.
 
+image::gitea-create-repo.png[Create new repo in gitea ui,link=self,window=blank,width=400,title="Create new repo in Gitea"]
+
 . Fill in the repository details:
 
 * **Repository name**: `coolstuff-app`
 * **Visibility**: Private (or Public -- either works)
-* Check **Initialize this repository**
+* **Description**: A coolstuff application
+* Check **Initialize repository(Adds .gitignore, License and README)**
 
 . Click **Create repository**.
 
-. Note the repository clone URL displayed at the top of the repository page. It will look like:
+. You will now see your initilized repository with a basic readme file looking like the below picture. If you click **Code** you can note the repository clone URL displayed.
+
+image::gitea-clone-repo.png[Center view of the created repository and button to clone Gitea the code,link=self,window=blank,width=700,title="Gitea center view of created repository with button to clone code"]
+
+. The clone URL will look like this. Copy it for now, we will use it soon:
 +
 ----
 {gitea_url}/{gitea_user}/coolstuff-app.git
 ----
 
+////
 === Create the clone-source Task
 
 . Create the `clone-source` Task. It uses a Red Hat Universal Base Image to install git and clone the specified repository:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 cat > clone-source-task.yaml << 'EOF'
 apiVersion: tekton.dev/v1
@@ -420,7 +443,7 @@ NOTE: The `clone-source` Task uses `registry.access.redhat.com/ubi9/ubi:latest` 
 
 . Apply the Task:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f clone-source-task.yaml
 ----
@@ -430,12 +453,46 @@ Expected output:
 ----
 task.tekton.dev/clone-source created
 ----
+////
 
-=== Update the Pipeline to add the Git source stage
+=== Update the Pipeline to add a git clone task
 
-. Update the Pipeline definition to prepend the `clone-source` Task. The updated Pipeline has 3 tasks: `fetch-source`, then `build`, then `summarize`:
+This time we will update the pipeline in the OpenShift console using the Pipeline Builder.
+
+NOTE: Doing it manually in the console is a good way to learn about the pipeline builder and it's capabilities. It's not something you do in a production or even test environment though. You can also do this manually using the CLi as before, or more commonly done - using GitOps and ArgoCD.  
+
+. Go to the OpenShift console, fold out Pipelines and then click Pipelines. Click the already created **coolstuff-build-pipeline** and then on the right side click on **Actions** and **Edit Pipeline**.
+
+image::pipeline-action-edit.png[Edit pipeline in console,link=self,window=blank,width=700,title="Edit the pipeline in the Pipeline builder"]
+
+. Make sure you have selected the **Pipeline builder** choice in the center view.
+
+image::pipeline-edit.png[Edit pipeline in console,link=self,window=blank,width=700,title="Edit the pipeline in the Pipeline builder"]
+
+. Add a task before the previously first task. Hover over the build task and click on the blue + sign appearing on the left hand side of build.
+
+image::pipeline-add-task-before.png[Add a task before build task,link=self,window=blank,width=700,title="Hover over task to add a new task before"]
+
+. Click **Add Task** and start typing **git-clone**. Tasks will appear in a list below. Choose the git-clone tagged with Red Hat. Then Click **Add**
+
+image::pipeline-add-git-clone.png[Add a git-clone task ,link=self,window=blank,width=700,title="Adding a git-clone task"]
+
+NOTE: The git-clone task we use here is a default task provided by the OpenShift Pipeline installation. OpenShift Pipelines comes with a large number of tasks you can use out of the box.
+
+. The updated Pipeline now has 3 tasks: `git-clone`, then `build`, then `summarize`. We now need to configure our git-clone task. Click on the git-clone task and fill in the following fields:
+
+
+[cols="1,1", options="header"]
+|===
+| Parameter Value | Display Name
+| Display name  | git-clone
+| URL | https://repository-gitea.apps.cluster-mwqps.mwqps.sandbox3925.opentlc.com/user1/coolstuff-app.git
+| output | shared-data |
+|===
+
+////
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 cat > coolstuff-pipeline-v2.yaml << 'EOF'
 apiVersion: tekton.dev/v1
@@ -515,7 +572,7 @@ EOF
 
 . Apply the updated Pipeline. Because the name `coolstuff-build-pipeline` already exists, `oc apply` updates it in place:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f coolstuff-pipeline-v2.yaml
 ----
@@ -528,7 +585,7 @@ pipeline.tekton.dev/coolstuff-build-pipeline configured
 
 . Create a PipelineRun that provides the Gitea repository URL:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 cat > coolstuff-pipelinerun-02.yaml << 'EOF'
 apiVersion: tekton.dev/v1
@@ -562,14 +619,20 @@ IMPORTANT: Replace `{gitea_url}`, `{gitea_user}`, and `{gitea_password}` in `coo
 
 . Apply the PipelineRun:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f coolstuff-pipelinerun-02.yaml
 ----
 
-. Follow the full pipeline log:
+////
+
+. View the 3-stage pipeline graph in the console under **Pipelines** → PiplineRuns → `coolstuff-pipeline-*random-id*` Click the pipelineRun and verify its all green and marked as Succeeded.
+
+image::pipeline-run-verify.png[OpenShift console pipeline graph showing git-clone, build, and summarize task nodes in a linear sequence all with green Succeeded status,link=self,window=blank,width=700,title="3-stage pipeline from Git source to packaged artifact"]
+
+. Finally, check the full pipeline log in the terminal:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn pipelinerun logs coolstuff-pipeline-run-02 -f
 ----
@@ -577,40 +640,56 @@ tkn pipelinerun logs coolstuff-pipeline-run-02 -f
 Expected output:
 +
 ----
-[fetch-source : clone] === Installing git ===
-[fetch-source : clone] === Cloning repository ===
-[fetch-source : clone] URL      : https://gitea.../coolstuff-app.git
-[fetch-source : clone] Revision : main
-[fetch-source : clone] Repository cloned to: /workspace/output/source
-[fetch-source : clone] Files:
-[fetch-source : clone] README.md
-[build : validate] === Validating coolstuff-store-frontend v3.1.0 ===
+tkn pipelinerun logs coolstuff-build-pipeline-4gsxv5 -f
+[git-clone : prepare-and-run] Running Script /scripts/prepare.sh
+[git-clone : prepare-and-run] ---> Phase: Preparing the filesystem before cloning the repository...
+[git-clone : prepare-and-run] ---> Phase: Deleting all contents of checkout-dir '/workspace/output/'...
+[git-clone : prepare-and-run] removed directory '/workspace/output//lost+found'
+[git-clone : prepare-and-run] Running Script /scripts/git-run.sh
+[git-clone : prepare-and-run] ---> Phase: Setting output workspace as safe directory ('/workspace/output')...
+[git-clone : prepare-and-run] ---> Phase: Setting up HTTP_PROXY=''...
+[git-clone : prepare-and-run] ---> Phase: Settting up HTTPS_PROXY=''...
+[git-clone : prepare-and-run] ---> Phase: Setting up NO_PROXY=''...
+[git-clone : prepare-and-run] ---> Phase: Cloning 'https://repository-gitea.apps.cluster-mwqps.mwqps.sandbox3925.opentlc.com/user1/coolstuff-app.git' into '/workspace/output/'...
+[git-clone : prepare-and-run] + exec git-init -url=https://repository-gitea.apps.cluster-mwqps.mwqps.sandbox3925.opentlc.com/user1/coolstuff-app.git -revision=main -refspec= -path=/workspace/output/ -sslVerify=true -submodules=true -depth=1 -sparseCheckoutDirectories=
+[git-clone : prepare-and-run] {"level":"info","ts":1772811781.4634206,"caller":"git/git.go:384","msg":"Retrying operation (attempt 1)"}
+[git-clone : prepare-and-run] {"level":"info","ts":1772811782.1669984,"caller":"git/git.go:218","msg":"Successfully cloned https://repository-gitea.apps.cluster-mwqps.mwqps.sandbox3925.opentlc.com/user1/coolstuff-app.git @ cf857928b1dae224f4259bbfea38b2576b0ab568 (grafted, HEAD, origin/main) in path /workspace/output/"}
+[git-clone : prepare-and-run] {"level":"info","ts":1772811782.1670656,"caller":"git/git.go:384","msg":"Retrying operation (attempt 1)"}
+[git-clone : prepare-and-run] {"level":"info","ts":1772811782.8715403,"caller":"git/git.go:267","msg":"Successfully initialized and updated submodules in path /workspace/output/"}
+[git-clone : prepare-and-run] Running Script /scripts/report.sh
+[git-clone : prepare-and-run] ---> Phase: Collecting cloned repository information ('/workspace/output/')...
+[git-clone : prepare-and-run] ---> Phase: Setting output workspace as safe directory ('/workspace/output')...
+[git-clone : prepare-and-run] ---> Phase: Reporting last commit date '1772806132'...
+[git-clone : prepare-and-run] ---> Phase: Reporting parsed revision SHA 'cf857928b1dae224f4259bbfea38b2576b0ab568'...
+[git-clone : prepare-and-run] ---> Phase: Reporting repository URL 'https://repository-gitea.apps.cluster-mwqps.mwqps.sandbox3925.opentlc.com/user1/coolstuff-app.git'...
+
+[build : validate] === Validating coolstuff-store-app v1.0.0 ===
 [build : validate] Workspace path: /workspace/source
 [build : validate] Validation passed.
-[build : test] === Running tests for coolstuff-store-frontend ===
+
+[build : test] === Running tests for coolstuff-store-app ===
 [build : test] Continuing from: validate-complete
 [build : test] All tests passed.
-[build : package] === Packaging coolstuff-store-frontend v3.1.0 ===
+
+[build : package] === Packaging coolstuff-store-app v1.0.0 ===
 [build : package] Continuing from: test-complete
-[build : package] Package created: coolstuff-store-frontend-3.1.0.tar.gz
+[build : package] Package created: coolstuff-store-app-1.0.0.tar.gz
+
 [summarize : summarize] ========================================
 [summarize : summarize]   Coolstuff Store Build Summary
 [summarize : summarize] ========================================
-[summarize : summarize] Artifact    : coolstuff-store-frontend-3.1.0.tar.gz
+[summarize : summarize] Application : coolstuff-store-app
+[summarize : summarize] Version     : 1.0.0
+[summarize : summarize] Artifact    : coolstuff-store-app-1.0.0.tar.gz
 [summarize : summarize] Status      : SUCCESS -- ready for deployment
 [summarize : summarize] ========================================
 ----
-
-. View the 3-stage pipeline graph in the **Developer** perspective under **Pipelines** → `coolstuff-build-pipeline` → `coolstuff-pipeline-run-02`.
-
-// TODO: Add screenshot of the 3-stage pipeline graph in the OpenShift console showing fetch-source, build, and summarize all Succeeded
-image::pipeline-three-stage-graph.png[OpenShift console pipeline graph showing fetch-source, build, and summarize task nodes in a linear sequence all with green Succeeded status,link=self,window=blank,width=700,title="3-stage pipeline from Git source to packaged artifact"]
 
 === Verify
 
 Confirm the updated Pipeline has 3 stages:
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn pipeline describe coolstuff-build-pipeline
 ----
@@ -627,7 +706,7 @@ Tasks
 
 Confirm both PipelineRuns completed:
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn pipelinerun list
 ----
@@ -635,60 +714,6 @@ tkn pipelinerun list
 * `coolstuff-pipeline-run-02` shows `Succeeded`
 * Logs show the `fetch-source` stage running before `build`
 * The 3-stage pipeline graph is visible in the console
-
-== Troubleshooting
-
-**Issue**: PipelineRun shows `CouldntGetPipeline`.
-
-**Solution**: Confirm the Pipeline is present in the project:
-
-[source,bash]
-----
-oc get pipeline
-----
-
-If missing, re-apply `coolstuff-pipeline.yaml`.
-
----
-
-**Issue**: `fetch-source` stage fails with `dnf: command not found`.
-
-**Solution**: The `clone-source` Task uses `ubi9/ubi:latest` (full UBI), not `ubi9/ubi-minimal`. Confirm the Task spec uses `registry.access.redhat.com/ubi9/ubi:latest` as the image. Re-apply the Task if needed.
-
----
-
-**Issue**: `fetch-source` stage fails with `fatal: repository not found` or `403 Forbidden`.
-
-**Solution**:
-
-. Confirm the Gitea repository was created and is accessible at `{gitea_url}/{gitea_user}/coolstuff-app`.
-. Confirm the `git-user` and `git-password` parameter values in `coolstuff-pipelinerun-02.yaml` match your Gitea credentials exactly.
-. If the repository is Private, ensure credentials are supplied in the PipelineRun params.
-
----
-
-**Issue**: `fetch-source` stage fails with `SSL certificate problem`.
-
-**Solution**: The `GIT_SSL_NO_VERIFY=true` env var should suppress SSL errors. Confirm it is present in the `clone-source` Task's step definition under `env:`. Re-apply `clone-source-task.yaml` if needed.
-
----
-
-**Issue**: PipelineRun stays in `Pending` because the PVC is already in use.
-
-**Solution**: The `workshop-pvc` PVC uses `ReadWriteOnce` and can only be mounted by 1 pod at a time. Confirm the previous PipelineRun has fully completed before starting a new one:
-
-[source,bash]
-----
-tkn pipelinerun list
-----
-
-Wait until `coolstuff-pipeline-run-01` shows `Succeeded` before applying `coolstuff-pipelinerun-02.yaml`.
-
----
-
-**Issue**: `build` stage fails with `cat: /workspace/source/stage.txt: No such file or directory`.
-
-**Solution**: The clone-source Task writes `stage.txt` to `$(workspaces.output.path)`, which maps to `shared-data`. The build Task reads from `$(workspaces.source.path)`, which also maps to `shared-data`. Both paths resolve to the same PVC mount. Confirm the workspace mapping in the Pipeline uses `workspace: shared-data` for both `fetch-source` and `build` task entries.
 
 == Module summary
 
@@ -721,7 +746,3 @@ By completing this module, you should now understand:
 * How a PipelineRun provides the runtime context (parameters, workspace bindings) that a Pipeline needs to execute
 * How the OpenShift console visual pipeline graph helps operators and developers understand pipeline status at a glance
 
-== Assets needed
-
-. `content/modules/ROOT/assets/images/pipeline-graph-succeeded.png` -- OpenShift console pipeline graph showing build and summarize tasks with Succeeded status (clickable full-size)
-. `content/modules/ROOT/assets/images/pipeline-three-stage-graph.png` -- OpenShift console pipeline graph showing the 3-stage fetch-source, build, and summarize pipeline (clickable full-size)
