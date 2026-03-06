@@ -626,21 +626,24 @@ oc apply -f coolstuff-pipelinerun-02.yaml
 
 ////
 
-. View the 3-stage pipeline graph in the console under **Pipelines** → PiplineRuns → `coolstuff-pipeline-*random-id*` Click the pipelineRun and verify its all green and marked as Succeeded.
+. View the 3-stage pipeline graph in the console under **Pipelines** → PiplineRuns → `coolstuff-pipeline-_random-id_` Click the pipelineRun and verify its all green and marked as Succeeded.
 
 image::pipeline-run-verify.png[OpenShift console pipeline graph showing git-clone, build, and summarize task nodes in a linear sequence all with green Succeeded status,link=self,window=blank,width=700,title="3-stage pipeline from Git source to packaged artifact"]
 
 . Finally, check the full pipeline log in the terminal:
+
+NOTE: You will have to check what the random id appended on your pipelinerun-instance is and adjust the below command with your id instead
+
 +
 [source,sh,role="copypaste"]
 ----
-tkn pipelinerun logs coolstuff-pipeline-run-02 -f
+tkn pipelinerun logs coolstuff-build-pipeline-CHANGE_ME -f
 ----
 +
 Expected output:
 +
 ----
-tkn pipelinerun logs coolstuff-build-pipeline-4gsxv5 -f
+tkn pipelinerun logs coolstuff-build-pipeline-someId -f
 [git-clone : prepare-and-run] Running Script /scripts/prepare.sh
 [git-clone : prepare-and-run] ---> Phase: Preparing the filesystem before cloning the repository...
 [git-clone : prepare-and-run] ---> Phase: Deleting all contents of checkout-dir '/workspace/output/'...
@@ -687,11 +690,11 @@ tkn pipelinerun logs coolstuff-build-pipeline-4gsxv5 -f
 
 === Verify
 
-Confirm the updated Pipeline has 3 stages:
+Confirm the updated Pipeline has 3 stages(again referencing your specific instance id):
 
 [source,sh,role="copypaste"]
 ----
-tkn pipeline describe coolstuff-build-pipeline
+tkn pipeline describe coolstuff-build-pipeline-CHANGE_ME
 ----
 
 Expected output includes:
@@ -711,7 +714,7 @@ Confirm both PipelineRuns completed:
 tkn pipelinerun list
 ----
 
-* `coolstuff-pipeline-run-02` shows `Succeeded`
+* `coolstuff-build-pipeline-_random-id_` shows `Succeeded`
 * Logs show the `fetch-source` stage running before `build`
 * The 3-stage pipeline graph is visible in the console
 
