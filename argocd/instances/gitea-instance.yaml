@@ -1,0 +1,19 @@
+apiVersion: project.openshift.io/v1
+kind: Project
+metadata:
+  name: gitea
+---
+apiVersion: pfe.rhpds.com/v1
+kind: Gitea
+metadata:
+  name: gitea-workshop
+  namespace: gitea
+spec:
+  giteaSsl: true
+  giteaAdminUser: admin
+  giteaAdminPassword: redhat
+  giteaAdminEmail: admin@workshop.com
+  giteaCreateUsers: true
+  giteaGenerateUserFormat: "user%d"
+  giteaUserNumber: 3
+  giteaUserPassword: openshift

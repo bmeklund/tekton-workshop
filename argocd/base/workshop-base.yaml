@@ -1,0 +1,73 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: workshop-base
+  namespace: openshift-gitops
+spec:
+  generators:
+  - list:
+      elements:
+        - name: gitea
+          path: OLMDeploy
+          repoURL: https://github.com/rhpds/gitea-operator
+          targetNamespace: gitea-operator
+          syncWave: "0"
+        - name: workshop-components
+          path: argocd/instances
+          repoURL: https://github.com/bmeklund/tekton-workshop
+          targetNamespace: openshift-operators
+          syncWave: "1"             # Will sync after operators-base Application is processed
+        - name: showroom
+          path: argocd/lab-guide
+          repoURL: https://github.com/bmeklund/tekton-workshop
+          targetNamespace: lab-guide
+          syncWave: "2"
+  template:
+    metadata:
+      name: "{{name}}" 
+      namespace: openshift-gitops
+      labels:
+        appset.argocd.argoproj.io/name: dependency-chained-apps
+        name: "{{name}}"
+      annotations:
+        # Crucial: Apply the sync-wave annotation to the generated Application resource itself
+        argocd.argoproj.io/sync-wave: "{{syncWave}}"
+    spec:
+      project: default
+      source:
+        repoURL: "{{repoURL}}"
+        targetRevision: HEAD
+        path: "{{path}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{targetNamespace}}"
+      #syncPolicy:
+      #  automated:
+      #    prune: true # Delete resources that are no longer in Git
+      #    selfHeal: false # Revert any manual changes to match Git
+      #  syncOptions:
+      #    - CreateNamespace=true # Important: Automatically creates the namespace if it doesn't exist
+      #    - ApplyOutOfSyncOnly=true # Only sync resources that are out of sync
+  strategy:
+    rollingSync:
+      steps:
+        # Step 1: Deploy gitea
+        - matchExpressions:
+            - key: name
+              operator: In
+              values:
+                - "gitea" 
+        # Optional pause for review between steps
+      # - pause: {}
+        # Step 2: Deploy instances
+        - matchExpressions:
+            - key: name
+              operator: In
+              values:
+                - "workshop-components"
+        # Step 3: Deploy showroom
+        - matchExpressions:
+            - key: name
+              operator: In
+              values:
+                - "showroom"

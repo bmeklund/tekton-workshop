@@ -10,6 +10,6 @@ asciidoc:
 
 antora:
   extensions:
-    - require: ./content/lib/dev-mode.js
+    - require: ./lib/dev-mode.js
       enabled: false
-    - require: ./content/lib/preserve-url-params-extension.js
+    - require: ./lib/preserve-url-params-extension.js

@@ -1,7 +1,7 @@
 ---
 site:
   title: "Building Pipelines using Tekton on OpenShift"
-  url: https://github.com/meklund/tekton-workshop
+  url: https://github.com/bmeklund/tekton-workshop
   start_page: modules::index.adoc
 
 content:

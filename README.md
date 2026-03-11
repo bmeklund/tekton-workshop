@@ -37,3 +37,19 @@ This workshop is based on [Antora](https://antora.org/) and [Red Hat scholars te
 To run this workshop in your own environment, follow the step by step tutorial link for your cluster available below:
 
 https://bmeklund.github.io/tekton-workshop/
+
+## Workshop basics setup
+
+To install the needed components run the below commands.
+
+
+### To clean up the cluster of gitops managed components run the below command
+
+```sh
+oc delete applicationset workshop-infra -n openshift-gitops
+```
+
+If error with gitea operator installation - until fixed operator
+```sh
+oc set image deployment/gitea-operator-controller-manager kube-rbac-proxy=quay.io/brancz/kube-rbac-proxy:v0.13. -n gitea-operator
+```

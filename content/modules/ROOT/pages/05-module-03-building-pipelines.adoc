@@ -632,7 +632,7 @@ image::pipeline-run-verify.png[OpenShift console pipeline graph showing git-clon
 
 . Finally, check the full pipeline log in the terminal:
 
-NOTE: You will have to check what the random id appended on your pipelinerun-instance is and adjust the below command with your id instead
+NOTE: You will have to check what the random id appended on your pipelinerun-instance is and adjust the below command with your id instead. You can see the specific id appended on your pipelineRun in the OpenShift console.
 
 +
 [source,sh,role="copypaste"]

@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-guide
+  namespace: lab-guide
+  labels:
+    app: lab-guide
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lab-guide
+  template:
+    metadata:
+      labels:
+        app: lab-guide
+    spec:
+      containers:
+      - name: lab-guide
+        image: "quay.io/meklund/tekton-tutorial:latest"
+        ports:
+        - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: lab-guide
+  namespace: lab-guide
+spec:
+  ports:
+    - name: 8080-tcp
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: lab-guide
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: doc
+  namespace: lab-guide
+spec:
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
+  port:
+    targetPort: 8080-tcp
+  to:
+    kind: Service
+    name: lab-guide
