@@ -42,13 +42,13 @@ https://bmeklund.github.io/tekton-workshop/
 
 ### To install the needed components(operators and instances) run the below commands.
 
-. Install the OpenShift GitOps Operator
+1. Install the OpenShift GitOps Operator
 
 ```sh
 oc apply -f https://raw.githubusercontent.com/bmeklund/tekton-workshop/refs/heads/main/argocd/argo-cd.yaml
 ```
 
-. Install the workshops needed components(operators and instances)
+2. Install the workshops needed components(operators and instances)
 
 ```sh
 oc apply -f https://raw.githubusercontent.com/bmeklund/tekton-workshop/refs/heads/main/argocd/base/workshop-base.yaml
