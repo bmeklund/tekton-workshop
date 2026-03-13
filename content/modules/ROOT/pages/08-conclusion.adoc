@@ -14,8 +14,8 @@ Throughout this workshop, you gained hands-on experience with:
 * How multiple steps within a Task run sequentially and share data through a Workspace, with Parameters making the same Task reusable across applications and versions
 * How Pipelines chain Tasks using `runAfter` without tightly coupling them, with Pipeline Parameters and Workspace mappings flowing values down to each stage
 * How the OpenShift console visual pipeline graph and the `tkn` CLI give operators and developers instant visibility into pipeline status at every stage
-* How to diagnose failed pipeline runs using `tkn pipelinerun describe` and step-level logs, and how to recover by fixing the underlying cause and re-running
 * How Pipelines as Code stores pipeline definitions in the `.tekton/` directory alongside application code, triggers runs automatically on Git events, and gives developers GitOps PR commands to control execution without touching the cluster
+* How to diagnose failed pipeline runs using `tkn pipelinerun describe` and step-level logs, and how to recover by fixing the underlying cause and re-running
 
 You now have the skills to design, build, run, and maintain CI/CD pipelines on Red Hat OpenShift Pipelines for any application.
 

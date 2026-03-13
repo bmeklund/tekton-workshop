@@ -332,9 +332,21 @@ image::pipeline-run-logs.png[OpenShift console showing the coolstuff-build-pipel
 
 Coolstuff Store's pipeline currently starts by assuming the source code is already in the workspace. In a real CI/CD workflow, the first stage should clone source code from Git. In this exercise, you'll create a `clone-source` Task that pulls code from the Gitea server, then extend the Pipeline to use it as the first stage.
 
+[#create_git_repository]
 === Create a repository in Gitea
 
-. Click the **Gitea** tab in the right panel to open the Gitea web interface. In the right top corner click **Sign In**
+The first step is to create a Git repository to clone in the pipeline.
+You can use any Git server (e.g. GitHub, BitBucket, etc). For this lab we will use a 
+Gitea git server.
+
+`*Click on the 'Developer Repository' button below*`
+
+[link={GIT_URL}]
+[window=_blank, align="center"]
+[role='params-link']
+image::developer-repository-button.png[Developer Repository - Button, 300]
+
+. In the right top corner click **Sign In**
 
 image::gitea-sign-in.png[Gitea start page,link=self,window=blank,width=700,title="Gitea's start page with sign in"]
 

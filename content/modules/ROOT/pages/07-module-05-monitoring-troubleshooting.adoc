@@ -1,4 +1,4 @@
-= Module 4: Monitoring and troubleshooting
+= Module 5: Monitoring and troubleshooting
 :source-highlighter: rouge
 :toc: macro
 :toclevels: 1
