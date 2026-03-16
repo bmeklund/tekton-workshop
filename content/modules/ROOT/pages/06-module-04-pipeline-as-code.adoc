@@ -91,7 +91,7 @@ If you have closed the Gitea tab - `*Click on the 'Developer Repository' button 
 [role='params-link']
 image::developer-repository-button.png[Developer Repository - Button, 300]
 
-Then, `*click on 'Sign In' and login via OpenShift as user{USER_ID}/{OPENSHIFT_PASSWORD}*`
+Then, `*click on 'Sign In' and login via OpenShift as user {user}/{password}*`
 
 image::gitea-sign-in.png[Gitea start page,link=self,window=blank,width=700,title="Gitea's start page with sign in"]
 ====

@@ -7,6 +7,18 @@ nav:
 asciidoc:
   attributes:
     lab_name: "building-pipelines-tekton-openshift"
+    release-version: master
+    page-pagination: true
+    # OpenShift Cluster Access
+    OPENSHIFT_CONSOLE_URL: "%OPENSHIFT_CONSOLE_URL%"
+    OPENSHIFT_API_URL: "%OPENSHIFT_API_URL%"
+    OPENSHIFT_USERNAME: "%OPENSHIFT_USERNAME%"
+    OPENSHIFT_PASSWORD: "%OPENSHIFT_PASSWORD%"
+    # Environment
+    guid: "%guid%"
+    page-links:
+    - url: https://redhat.com
+      text: Red Hat
 
 antora:
   extensions:
