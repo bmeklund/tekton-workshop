@@ -86,7 +86,7 @@ Copy this URL. You will need it when configuring the webhook in Gitea.
 
 If you have closed the Gitea tab - `*Click on the 'Developer Repository' button below*`
 
-[link={GIT_URL}]
+[link={gitea_console_url}]
 [window=_blank, align="center"]
 [role='params-link']
 image::developer-repository-button.png[Developer Repository - Button, 300]

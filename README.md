@@ -48,7 +48,7 @@ https://bmeklund.github.io/tekton-workshop/
 oc apply -f https://raw.githubusercontent.com/bmeklund/tekton-workshop/refs/heads/main/argocd/argo-cd.yaml
 ```
 
-2. Install the workshops needed components(operators and instances)
+2. When OpenShift GitOps is installed and ready - Install the workshops needed components(operators and instances)
 
 ```sh
 oc apply -f https://raw.githubusercontent.com/bmeklund/tekton-workshop/refs/heads/main/argocd/base/workshop-base.yaml
@@ -60,10 +60,4 @@ To clean up the cluster of gitops managed components run the below command
 
 ```sh
 oc delete applicationset workshop-base -n openshift-gitops
-```
-
-If error with gitea operator installation(gitea-controller-manager > k8s.rbac image error) Needed until gitea operator updated.
-
-```sh
-oc set image deployment/gitea-operator-controller-manager kube-rbac-proxy=quay.io/brancz/kube-rbac-proxy:v0.13. -n gitea-operator
 ```

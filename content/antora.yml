@@ -10,10 +10,11 @@ asciidoc:
     release-version: master
     page-pagination: true
     # OpenShift Cluster Access
-    OPENSHIFT_CONSOLE_URL: "%OPENSHIFT_CONSOLE_URL%"
     OPENSHIFT_API_URL: "%OPENSHIFT_API_URL%"
     OPENSHIFT_USERNAME: "%OPENSHIFT_USERNAME%"
     OPENSHIFT_PASSWORD: "%OPENSHIFT_PASSWORD%"
+    OPENSHIFT_CONSOLE_URL: https://console-openshift-console.%APPS_HOSTNAME_SUFFIX%/topology/ns/{OPENSHIFT_USERNAME}
+    GITEA_CONSOLE_URL: https://gitea-workshop-gitea.%APPS_HOSTNAME_SUFFIX%/
     # Environment
     guid: "%guid%"
     page-links:

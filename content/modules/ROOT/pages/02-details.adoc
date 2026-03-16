@@ -52,26 +52,40 @@ Participants need access to:
 Before starting, verify the following:
 
 * OpenShift console is accessible at `{openshift_console_url}`
-* You can log in with username `{user}` and password `{password}`
-* Gitea is accessible at `{gitea_console_url}`
+* You can log in with 
+** Username: `{OPENSHIFT_USERNAME}`
+** Password: `{OPENSHIFT_PASSWORD}`
+* Gitea is accessible at `{GITEA_URL}`
+
 * The web terminal in the right panel responds to commands
 
 === Setup validation
 
 Run these commands in the terminal tab on the right to verify your environment is ready:
 
-[source,bash]
+==== Verify you are logged in to OpenShift
+[source,sh,role="copypaste"]
 ----
-# Verify you are logged in to OpenShift
 oc whoami
+----
 
-# Verify OpenShift CLI version
+==== Verify OpenShift CLI version
+[source,sh,role="copypaste"]
+----
 oc version --client
+----
 
-# Verify Tekton CLI version
+==== Verify Tekton CLI version
+
+[source,sh,role="copypaste"]
+----
 tkn version
+----
 
-# Verify OpenShift Pipelines operator is installed
+==== Verify OpenShift Pipelines operator is installed
+
+[source,sh,role="copypaste"]
+----
 oc get csv -n openshift-operators | grep pipelines
 ----
 

@@ -341,7 +341,7 @@ Gitea git server.
 
 `*Click on the 'Developer Repository' button below*`
 
-[link={GIT_URL}]
+[link={gitea_console_url}]
 [window=_blank, align="center"]
 [role='params-link']
 image::developer-repository-button.png[Developer Repository - Button, 300]
@@ -352,8 +352,8 @@ image::gitea-sign-in.png[Gitea start page,link=self,window=blank,width=700,title
 
 . Log in with your user:
 
-* **Username**: `{gitea_user}`
-* **Password**: `{gitea_password}`
+* **Username**: `{OPENSHIFT_USERNAME}`
+* **Password**: `{OPENSHIFT_PASSWORD}`
 
 . In the top right corner, click the **+** icon and select **New repository**.
 
