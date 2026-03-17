@@ -45,13 +45,17 @@ You'll create a Task called `build-coolstuff-app` that simulates the 3-stage bui
 +
 [source,sh,role="copypaste"]
 ----
-oc project tekton-workshop
+oc project tekton-workshop-%OPENSHIFT_USERNAME%
 ----
 +
 Expected output:
 +
 ----
-Now using project "tekton-workshop" on server "...".
+Now using project "tekton-workshop-%OPENSHIFT_USERNAME%" on server "...".
+
+or
+
+Already on project "tekton-workshop-%OPENSHIFT_USERNAME%" on server ...
 ----
 
 . Create the Task definition file:
@@ -160,10 +164,16 @@ Confirm the Task is present and has the correct structure:
 oc get task build-coolstuff-app
 ----
 
+Expected output
+----
+NAME                  AGE
+build-coolstuff-app   26s
+----
+
 * Task name is `build-coolstuff-app`
 * `tkn task describe` shows 3 steps, 2 params, 1 workspace
 
-Also check the task in the OpenShift console in **Pipelines** then **Tasks**
+Also check the new task in the OpenShift console in **Pipelines** then **Tasks**
 
 [#exercise-2]
 == Exercise 2: Create a PVC and run the Task
@@ -215,7 +225,7 @@ NAME           STATUS   VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
 workshop-pvc   Pending    ...      1Gi        RWO            ...            10s
 ----
 +
-NOTE: OpenShift uses dynamic storage provisioning. The PVC moves from `Pending` to `Bound` automatically once storage is allocated. If it remains in `Pending` for more than 1 minute, see the troubleshooting section below.
+NOTE: OpenShift uses dynamic storage provisioning. The PVC moves from `Pending` to `Bound` automatically once storage is allocated/used.
 
 . Create a TaskRun that binds the Workspace to the PVC:
 +
@@ -277,7 +287,9 @@ Expected output:
 +
 The `-f` flag follows the log stream and returns to the prompt when the TaskRun finishes.
 
-. View the TaskRun detail in the OpenShift console. Navigate to **Pipelines**, then **Tasks**. In the central view Click **TaskRuns** to see the different executions of tasks. Click **build-coolstuff-run-01** to see its log output.
+. View the TaskRun detail in the OpenShift console. 
+.. Navigate to **Pipelines**, then **Tasks**. In the central view Click **TaskRuns** to see the different executions of tasks. 
+.. Click **build-coolstuff-run-01** to see an overview with the Status=Succeeded, then click the Logs tab to see the log output from the task run.
 
 image::taskrun-multistep-logs.png[OpenShift console TaskRun detail showing validate, test, and package steps with their log output,link=self,window=blank,width=700,title="Multi-step TaskRun with logs"]
 
@@ -409,72 +421,6 @@ tkn taskrun list
 * Both `build-coolstuff-run-01` and `build-coolstuff-run-02` show `Succeeded`
 * Each TaskRun used the same `build-coolstuff-app` Task definition
 * Each TaskRun produced a different artifact name based on the parameters supplied
-
-== Troubleshooting
-
-**Issue**: PVC stays in `Pending` and does not bind.
-
-**Solution**:
-
-. Check available StorageClasses:
-+
-[source,sh,role="copypaste"]
-----
-oc get storageclass
-----
-
-. Confirm at least 1 StorageClass is marked as the default (shows `(default)` next to the name).
-. If no default exists, specify one explicitly in `workshop-pvc.yaml` by adding `storageClassName: <name>` under `spec:`, then re-apply.
-
----
-
-**Issue**: TaskRun fails with `CouldntGetTask: tasks.tekton.dev "build-coolstuff-app" not found`.
-
-**Solution**:
-
-. Verify the Task exists in the project:
-+
-[source,sh,role="copypaste"]
-----
-oc get tasks
-----
-
-. If missing, re-apply:
-+
-[source,sh,role="copypaste"]
-----
-oc apply -f build-coolstuff-task.yaml
-----
-
----
-
-**Issue**: Step `test` fails with `cat: /workspace/source/stage.txt: No such file or directory`.
-
-**Solution**: This error means the `validate` step did not write the file. Possible causes include a failed validate step or a missing Workspace binding. Confirm the TaskRun `workspaces` section references the correct PVC name and that the workspace `name` in the TaskRun matches the workspace `name` in the Task (`source`).
-
----
-
-**Issue**: `build-coolstuff-run-02` stays in `Pending` after `build-coolstuff-run-01` is still running.
-
-**Solution**: The PVC uses `ReadWriteOnce`, which allows only 1 pod to mount it at a time. Wait for `build-coolstuff-run-01` to reach `Succeeded` before applying `build-taskrun-02.yaml`.
-
-[source,sh,role="copypaste"]
-----
-oc get taskrun build-coolstuff-run-01 -w
-----
-
----
-
-**Issue**: `tkn taskrun logs` returns `Error: no TaskRun with name`.
-
-**Solution**: Confirm the TaskRun name matches exactly, including case:
-
-[source,sh,role="copypaste"]
-----
-tkn taskrun list
-----
-
-Use the exact name shown in the list output.
 
 == Module summary
 

@@ -457,71 +457,6 @@ oc get repository coolstuff-app \
 
 * The `lastPipelineRuns` field shows recent run history managed by PAC
 
-== Troubleshooting
-
-**Issue**: No PipelineRun is created after pushing to Gitea.
-
-**Solution**:
-
-. Confirm the webhook delivered successfully. In Gitea, navigate to **Settings**, then **Webhooks**, and click the webhook entry. Check the **Recent deliveries** tab for any `4xx` or `5xx` responses.
-. Verify the PAC controller route is reachable:
-+
-[source,sh,role="copypaste"]
-----
-oc get route pipelines-as-code-controller -n openshift-pipelines
-----
-. Check the PAC controller logs for errors:
-+
-[source,sh,role="copypaste"]
-----
-oc logs -n openshift-pipelines \
-  -l app.kubernetes.io/component=controller,app.kubernetes.io/part-of=pipelines-as-code \
-  --tail=50
-----
-
----
-
-**Issue**: PipelineRun is created but immediately fails with `CouldntGetTask`.
-
-**Solution**: The Tasks referenced in the `.tekton/` PipelineRun template (`build-coolstuff-app`, `summarize-build`) must exist in the `tekton-workshop` namespace. Confirm they are present:
-
-[source,sh,role="copypaste"]
-----
-oc get tasks -n tekton-workshop
-----
-
-If missing, re-apply the Task definitions from Modules 2 and 3.
-
----
-
-**Issue**: Repository resource shows no status or `lastPipelineRuns` is empty.
-
-**Solution**: Confirm the Repository URL in `coolstuff-repository.yaml` exactly matches the Gitea repository URL (including protocol and no trailing slash). The URL must match the `X-Gitea-Repo-URL` value sent in the webhook payload.
-
----
-
-**Issue**: `/retest` comment in Gitea has no effect.
-
-**Solution**: The commenting user must be listed as a collaborator or owner on the Gitea repository for GitOps commands to be accepted. Anonymous or non-collaborator comments are ignored by PAC. Confirm your Gitea user `{gitea_user}` is the repository owner.
-
----
-
-**Issue**: `pipelinesascode.tekton.dev/v1alpha1` resource not found when applying the Repository CRD.
-
-**Solution**: Confirm PAC CRDs are installed:
-
-[source,sh,role="copypaste"]
-----
-oc get crd repositories.pipelinesascode.tekton.dev
-----
-
-If missing, the PAC component of the OpenShift Pipelines operator did not install correctly. Check the operator pod status:
-
-[source,sh,role="copypaste"]
-----
-oc get pods -n openshift-pipelines
-----
-
 == Module summary
 
 Coolstuff Store's team can now push code and see their pipeline run automatically -- no manual PipelineRun creation, no separate webhook scripting, and no need to check OpenShift to see if the build passed.
@@ -543,10 +478,6 @@ Coolstuff Store's team can now push code and see their pipeline run automaticall
 * PAC injects dynamic variables like `{{ revision }}` and `{{ source_branch }}` at runtime, removing the need to hardcode commit references.
 * GitOps commands (`/retest`, `/cancel`) give developers pipeline control without cluster access.
 
-**Next steps:**
-
-xref:08-conclusion.adoc[Conclusion and next steps] summarizes the full workshop and provides resources for continuing your Tekton and OpenShift Pipelines journey.
-
 == Learning outcomes
 
 By completing this module, you should now understand:
@@ -556,3 +487,7 @@ By completing this module, you should now understand:
 * How `.tekton/` directory annotations (`on-event`, `on-target-branch`) filter which Git events trigger which pipeline definitions
 * How PAC dynamic variables like `{{ revision }}` and `{{ source_branch }}` make pipeline templates self-contained and reusable across commits and branches
 * How GitOps PR commands give developers pipeline control directly in their Git workflow without requiring cluster access
+
+**Next steps:**
+
+xref:07-module-05-monitoring-troubleshooting.adoc[Module 5: Monitoring and troubleshooting] covers how to investigate failed pipeline runs, read logs at the task and step level, and use the console to diagnose problems quickly.

@@ -31,16 +31,14 @@ Before starting this workshop, you should have:
 
 You will work on a pre-configured OpenShift {ocp_version} multinode cluster with Red Hat OpenShift Pipelines {pipelines_version} already installed. No setup is required on your part.
 
-You will have access to:
+You will have access to and use:
 
-* OpenShift console: {openshift_console_url}
-* Username: {user}
-* Password: {password}
-* Gitea Git server: {gitea_console_url}
-* Gitea username: {gitea_user}
-* Gitea password: {gitea_password}
+* The built in OpenShift console
+* A specific user on a shared cluster
+* A Gitea Git server for storing and working with code
+* A Terminal with the OpenShift CLi installed
 
-NOTE: All credentials and environment details are displayed in the lab interface on the right side of your screen.
+NOTE: All credentials and environment details are displayed in the lab guide.
 
 == Estimated time
 

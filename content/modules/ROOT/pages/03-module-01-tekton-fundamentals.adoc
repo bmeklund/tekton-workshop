@@ -48,14 +48,15 @@ NOTE: Red Hat OpenShift Pipelines {pipelines_version} also includes Triggers, Wo
 
 Coolstuff Store's OpenShift cluster has Red Hat OpenShift Pipelines {pipelines_version} pre-installed. Your first task is to confirm the installation and get familiar with the Pipelines interface before you start building.
 
-. Open the OpenShift console in your browser. Click the **OpenShift Console** tab in the right panel, or navigate directly to `{openshift_console_url}`.
+. Open the OpenShift console in your browser. Click the link below to open the OpenShift console in a new tab:
+** {openshift_console_url}/k8s/cluster/projects/tekton-workshop-%OPENSHIFT_USERNAME%[window=_blank]
 
 . Log in with your credentials:
 
-* **Username**: `{user}`
-* **Password**: `{password}`
+* **Username**: `{OPENSHIFT_USERNAME}`
+* **Password**: `{OPENSHIFT_PASSWORD}`
 
-. After logging in, make sure the perspective switcher at the top left of the console show **Administrator**.
+. This is the overview of details on the current OpenShift project you are in. It shows details on your workloads in it. At the moment it is empty but this we will change during the course of this workshop.
 
 . In the left navigation menu, click **Pipelines** and then **Pipelines** again. This menu confirms that OpenShift Pipelines is active in your cluster. The list is empty for now and **No Pipelines found** is shown in the main view. You'll populate it in the next exercises.
 
@@ -65,50 +66,25 @@ Coolstuff Store's OpenShift cluster has Red Hat OpenShift Pipelines {pipelines_v
 
 image::pipelines-operator-installed.png[OpenShift console showing the OpenShift Pipelines operator with Succeeded status in the Installed Operators list,link=self,window=blank,width=700,title="OpenShift Pipelines operator installed and ready"]
 
-=== Verify
-
-Confirm the operator status from the terminal. Click the **Terminal** tab in the right panel and run:
-
-[source,sh,role="copypaste"]
-----
-oc get csv -n openshift-operators | grep pipelines
-----
-
-Expected output:
-
-----
-openshift-pipelines-operator-rh.v1.20.x   Red Hat OpenShift Pipelines   1.20.x   ...   Succeeded
-----
-
-* Version shows `1.20.x`
-* Phase shows `Succeeded`
-
 [#exercise-2]
 == Exercise 2: Create your first Task
 
 Now that OpenShift Pipelines is confirmed, you'll create your first Tekton Task. This Task prints a custom message to demonstrate the structure of a Task definition. Building simple Tasks first gives you a foundation before you write more complex ones in Module 2.
 
-. In the **Terminal** tab, log in to OpenShift using your credentials:
-+
+=== Verify you are still logged in on OpenShift
 [source,sh,role="copypaste"]
 ----
-oc login {openshift_console_url} -u {user} -p {password}
+oc whoami
 ----
-+
-NOTE: If the console URL does not work for CLI login, ask your facilitator for the API server URL (typically on port 6443).
 
-. Create a new project for this workshop:
-+
-[source,sh,role="copypaste"]
+Expected output
 ----
-oc new-project tekton-workshop
+%OPENSHIFT_USERNAME%
 ----
-+
-Expected output:
-+
-----
-Now using project "tekton-workshop" on server "...".
-----
+
+NOTE: If not logged in, go back to the previous page and run the _oc login_ command again.
+
+=== Start creating Tasks
 
 . Create the Task definition file:
 +
@@ -175,6 +151,12 @@ oc describe task hello-coolstuff
 * Task name is `hello-coolstuff`
 * 1 step named `print-message`
 * 1 param named `message` with a default value
+
+Verify in the OpenShift console that you can see the same Task.
+
+Click on *Pipelines* in the left hand menu, then click *Tasks* and a list of tasks will be shown in the center view. At the moment we only have one task as shown below.
+
+image::task-created.png[OpenShift console showing the hello-coolstuff Task ,link=self,window=blank,width=700]
 
 [#exercise-3]
 == Exercise 3: Run your Task with a TaskRun
@@ -244,8 +226,8 @@ Expected output:
 ----
 
 . View the TaskRun in the OpenShift console. 
-  Navigate to **Pipelines**, then **Tasks** and in the central view click **TaskRuns**. In the central view you can now see the status(Succeeded) and more details of your TaskRun.  
-  Click `hello-coolstuff-run-01` if you want to look at even more details.
+.. Navigate to **Pipelines**, then **Tasks** and in the central view click **TaskRuns**. In the central view you can now see the status(Succeeded) and more details of your TaskRun.  
+.. Click `hello-coolstuff-run-01` if you want to look at even more details.
 
 image::taskrun-succeeded.png[OpenShift console showing the hello-coolstuff-run-01 TaskRun with a green Succeeded status badge and step logs,link=self,window=blank,width=700,title="TaskRun completed successfully"]
 
@@ -269,113 +251,6 @@ Succeeded
 * Logs contain your custom message `Coolstuff Store CI/CD is ready!`
 * `COMPLETIONTIME` is populated in the TaskRun
 
-== Troubleshooting
-
-**Issue**: TaskRun stays in `Running` state for more than 3 minutes.
-
-**Solution**:
-
-. Check the pod status:
-+
-[source,sh,role="copypaste"]
-----
-oc get pods -l tekton.dev/taskRun=hello-coolstuff-run-01
-----
-
-. If the pod shows `ImagePullBackOff`, view the events:
-+
-[source,sh,role="copypaste"]
-----
-oc describe pod -l tekton.dev/taskRun=hello-coolstuff-run-01
-----
-
-. Confirm the image `registry.access.redhat.com/ubi9/ubi-minimal:latest` is accessible. If not, ask your facilitator whether the cluster requires a mirrored image registry.
-
----
-
-**Issue**: `oc apply` returns `Error from server (Forbidden)`.
-
-**Solution**:
-
-. Verify you are logged in and in the correct project:
-+
-[source,sh,role="copypaste"]
-----
-oc whoami
-oc project
-----
-
-. If you are in the wrong project, switch to it:
-+
-[source,sh,role="copypaste"]
-----
-oc project tekton-workshop
-----
-
-. If the project does not exist, create it again:
-+
-[source,sh,role="copypaste"]
-----
-oc new-project tekton-workshop
-oc apply -f hello-task.yaml
-----
-
----
-
-**Issue**: TaskRun shows status `Failed`.
-
-**Solution**:
-
-. Check the TaskRun logs for error details:
-+
-[source,sh,role="copypaste"]
-----
-tkn taskrun logs hello-coolstuff-run-01
-----
-
-. Check the TaskRun events for additional context:
-+
-[source,sh,role="copypaste"]
-----
-oc describe taskrun hello-coolstuff-run-01
-----
-
-. Look at the `Steps` section in the describe output. The `Terminated` reason and exit code will indicate which step failed and why.
-
----
-
-**Issue**: `tkn` command not found.
-
-**Solution**:
-
-. Confirm you are using the web terminal in the right panel. It has `tkn` pre-installed.
-. If you are in a different terminal, fall back to the `oc` CLI for logs:
-+
-[source,sh,role="copypaste"]
-----
-oc logs -l tekton.dev/taskRun=hello-coolstuff-run-01 --all-containers
-----
-
----
-
-**Issue**: `oc get tasks` returns `No resources found in tekton-workshop namespace`.
-
-**Solution**:
-
-. Confirm you are in the correct namespace:
-+
-[source,sh,role="copypaste"]
-----
-oc project
-----
-
-. If needed, re-create the project and re-apply the Task:
-+
-[source,sh,role="copypaste"]
-----
-oc new-project tekton-workshop
-oc apply -f hello-task.yaml
-----
 
 == Module summary
 

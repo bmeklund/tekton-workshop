@@ -88,9 +88,13 @@ Modules 1 and 2 cover the YAML structure step by step, and the OpenShift console
 
 Yes. Module 3 covers Git integration using the Gitea server in your lab environment. The same approach applies to GitHub, GitLab, and Bitbucket.
 
+**"Can Pipelines be stored in Git?"**
+
+Yes, in multiple ways. As templates to be shared by multiple team. And module 4 covers Pipelines-as-code, by storing pipelines in Git with your application code you get a tight integration between pipeline and application. By storing pipelines in git you will get added value like versioning, review capabilities and collaboration around your pipelines too - bringing the full power of the Git workflow to your CI/CD pipelines
+
 **"What happens when a pipeline fails?"**
 
-Module 4 covers monitoring, log analysis, and troubleshooting pipeline failures with specific commands and console views.
+Module 5 covers monitoring, log analysis, and troubleshooting pipeline failures with specific commands and console views.
 
 **"Is OpenShift Pipelines the same as Jenkins?"**
 

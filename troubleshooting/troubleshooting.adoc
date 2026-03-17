@@ -1,0 +1,359 @@
+= Troubleshooting guide for the tekton workshop. Below are some Issues and Solutions you can check out if you get errors running the workshop.
+
+== Troubleshooting Module 1
+
+**Issue**: TaskRun stays in `Running` state for more than 3 minutes.
+
+**Solution**:
+
+. Check the pod status:
++
+[source,sh,role="copypaste"]
+----
+oc get pods -l tekton.dev/taskRun=hello-coolstuff-run-01
+----
+
+. If the pod shows `ImagePullBackOff`, view the events:
++
+[source,sh,role="copypaste"]
+----
+oc describe pod -l tekton.dev/taskRun=hello-coolstuff-run-01
+----
+
+. Confirm the image `registry.access.redhat.com/ubi9/ubi-minimal:latest` is accessible. If not, ask your facilitator whether the cluster requires a mirrored image registry.
+
+---
+
+**Issue**: `oc apply` returns `Error from server (Forbidden)`.
+
+**Solution**:
+
+. Verify you are logged in and in the correct project:
++
+[source,sh,role="copypaste"]
+----
+oc whoami
+oc project
+----
+
+. If you are in the wrong project, switch to it:
++
+[source,sh,role="copypaste"]
+----
+oc project tekton-workshop
+----
+
+. If the project does not exist, create it again:
++
+[source,sh,role="copypaste"]
+----
+oc new-project tekton-workshop
+oc apply -f hello-task.yaml
+----
+
+---
+
+**Issue**: TaskRun shows status `Failed`.
+
+**Solution**:
+
+. Check the TaskRun logs for error details:
++
+[source,sh,role="copypaste"]
+----
+tkn taskrun logs hello-coolstuff-run-01
+----
+
+. Check the TaskRun events for additional context:
++
+[source,sh,role="copypaste"]
+----
+oc describe taskrun hello-coolstuff-run-01
+----
+
+. Look at the `Steps` section in the describe output. The `Terminated` reason and exit code will indicate which step failed and why.
+
+---
+
+**Issue**: `tkn` command not found.
+
+**Solution**:
+
+. Confirm you are using the web terminal in the right panel. It has `tkn` pre-installed.
+. If you are in a different terminal, fall back to the `oc` CLI for logs:
++
+[source,sh,role="copypaste"]
+----
+oc logs -l tekton.dev/taskRun=hello-coolstuff-run-01 --all-containers
+----
+
+---
+
+**Issue**: `oc get tasks` returns `No resources found in tekton-workshop namespace`.
+
+**Solution**:
+
+. Confirm you are in the correct namespace:
++
+[source,sh,role="copypaste"]
+----
+oc project
+----
+
+. If needed, re-create the project and re-apply the Task:
++
+[source,sh,role="copypaste"]
+----
+oc new-project tekton-workshop
+oc apply -f hello-task.yaml
+----
+
+== Troubleshooting Module 2
+
+**Issue**: PVC stays in `Pending` and does not bind.
+
+**Solution**:
+
+. Check available StorageClasses:
++
+[source,sh,role="copypaste"]
+----
+oc get storageclass
+----
+
+. Confirm at least 1 StorageClass is marked as the default (shows `(default)` next to the name).
+. If no default exists, specify one explicitly in `workshop-pvc.yaml` by adding `storageClassName: <name>` under `spec:`, then re-apply.
+
+---
+
+**Issue**: TaskRun fails with `CouldntGetTask: tasks.tekton.dev "build-coolstuff-app" not found`.
+
+**Solution**:
+
+. Verify the Task exists in the project:
++
+[source,sh,role="copypaste"]
+----
+oc get tasks
+----
+
+. If missing, re-apply:
++
+[source,sh,role="copypaste"]
+----
+oc apply -f build-coolstuff-task.yaml
+----
+
+---
+
+**Issue**: Step `test` fails with `cat: /workspace/source/stage.txt: No such file or directory`.
+
+**Solution**: This error means the `validate` step did not write the file. Possible causes include a failed validate step or a missing Workspace binding. Confirm the TaskRun `workspaces` section references the correct PVC name and that the workspace `name` in the TaskRun matches the workspace `name` in the Task (`source`).
+
+---
+
+**Issue**: `build-coolstuff-run-02` stays in `Pending` after `build-coolstuff-run-01` is still running.
+
+**Solution**: The PVC uses `ReadWriteOnce`, which allows only 1 pod to mount it at a time. Wait for `build-coolstuff-run-01` to reach `Succeeded` before applying `build-taskrun-02.yaml`.
+
+[source,sh,role="copypaste"]
+----
+oc get taskrun build-coolstuff-run-01 -w
+----
+
+---
+
+**Issue**: `tkn taskrun logs` returns `Error: no TaskRun with name`.
+
+**Solution**: Confirm the TaskRun name matches exactly, including case:
+
+[source,sh,role="copypaste"]
+----
+tkn taskrun list
+----
+
+Use the exact name shown in the list output.
+
+== Troubleshooting Module 3
+
+**Issue**: PipelineRun shows `CouldntGetPipeline`.
+
+**Solution**: Confirm the Pipeline is present in the project:
+
+[source,bash]
+----
+oc get pipeline
+----
+
+If missing, re-apply `coolstuff-pipeline.yaml`.
+
+---
+
+**Issue**: `fetch-source` stage fails with `dnf: command not found`.
+
+**Solution**: The `clone-source` Task uses `ubi9/ubi:latest` (full UBI), not `ubi9/ubi-minimal`. Confirm the Task spec uses `registry.access.redhat.com/ubi9/ubi:latest` as the image. Re-apply the Task if needed.
+
+---
+
+**Issue**: `fetch-source` stage fails with `fatal: repository not found` or `403 Forbidden`.
+
+**Solution**:
+
+. Confirm the Gitea repository was created and is accessible at `{gitea_url}/{gitea_user}/coolstuff-app`.
+. Confirm the `git-user` and `git-password` parameter values in `coolstuff-pipelinerun-02.yaml` match your Gitea credentials exactly.
+. If the repository is Private, ensure credentials are supplied in the PipelineRun params.
+
+---
+
+**Issue**: `fetch-source` stage fails with `SSL certificate problem`.
+
+**Solution**: The `GIT_SSL_NO_VERIFY=true` env var should suppress SSL errors. Confirm it is present in the `clone-source` Task's step definition under `env:`. Re-apply `clone-source-task.yaml` if needed.
+
+---
+
+**Issue**: PipelineRun stays in `Pending` because the PVC is already in use.
+
+**Solution**: The `workshop-pvc` PVC uses `ReadWriteOnce` and can only be mounted by 1 pod at a time. Confirm the previous PipelineRun has fully completed before starting a new one:
+
+[source,bash]
+----
+tkn pipelinerun list
+----
+
+Wait until `coolstuff-pipeline-run-01` shows `Succeeded` before applying `coolstuff-pipelinerun-02.yaml`.
+
+---
+
+**Issue**: `build` stage fails with `cat: /workspace/source/stage.txt: No such file or directory`.
+
+**Solution**: The clone-source Task writes `stage.txt` to `$(workspaces.output.path)`, which maps to `shared-data`. The build Task reads from `$(workspaces.source.path)`, which also maps to `shared-data`. Both paths resolve to the same PVC mount. Confirm the workspace mapping in the Pipeline uses `workspace: shared-data` for both `fetch-source` and `build` task entries.
+
+== Troubleshooting Module 4 - Pipelines-as-code
+
+**Issue**: No PipelineRun is created after pushing to Gitea.
+
+**Solution**:
+
+. Confirm the webhook delivered successfully. In Gitea, navigate to **Settings**, then **Webhooks**, and click the webhook entry. Check the **Recent deliveries** tab for any `4xx` or `5xx` responses.
+. Verify the PAC controller route is reachable:
++
+[source,sh,role="copypaste"]
+----
+oc get route pipelines-as-code-controller -n openshift-pipelines
+----
+. Check the PAC controller logs for errors:
++
+[source,sh,role="copypaste"]
+----
+oc logs -n openshift-pipelines \
+  -l app.kubernetes.io/component=controller,app.kubernetes.io/part-of=pipelines-as-code \
+  --tail=50
+----
+
+---
+
+**Issue**: PipelineRun is created but immediately fails with `CouldntGetTask`.
+
+**Solution**: The Tasks referenced in the `.tekton/` PipelineRun template (`build-coolstuff-app`, `summarize-build`) must exist in the `tekton-workshop` namespace. Confirm they are present:
+
+[source,sh,role="copypaste"]
+----
+oc get tasks -n tekton-workshop
+----
+
+If missing, re-apply the Task definitions from Modules 2 and 3.
+
+---
+
+**Issue**: Repository resource shows no status or `lastPipelineRuns` is empty.
+
+**Solution**: Confirm the Repository URL in `coolstuff-repository.yaml` exactly matches the Gitea repository URL (including protocol and no trailing slash). The URL must match the `X-Gitea-Repo-URL` value sent in the webhook payload.
+
+---
+
+**Issue**: `/retest` comment in Gitea has no effect.
+
+**Solution**: The commenting user must be listed as a collaborator or owner on the Gitea repository for GitOps commands to be accepted. Anonymous or non-collaborator comments are ignored by PAC. Confirm your Gitea user `{gitea_user}` is the repository owner.
+
+---
+
+**Issue**: `pipelinesascode.tekton.dev/v1alpha1` resource not found when applying the Repository CRD.
+
+**Solution**: Confirm PAC CRDs are installed:
+
+[source,sh,role="copypaste"]
+----
+oc get crd repositories.pipelinesascode.tekton.dev
+----
+
+If missing, the PAC component of the OpenShift Pipelines operator did not install correctly. Check the operator pod status:
+
+[source,sh,role="copypaste"]
+----
+oc get pods -n openshift-pipelines
+----
+
+== Troubleshooting Module 5 - Monitoring and troubleshooting
+
+**Issue**: `tkn pipelinerun describe` does not show a `message` field with error details.
+
+**Solution**: Use the raw JSON output for the full condition message:
+
+[source,bash]
+----
+oc get pipelinerun coolstuff-full-run-01 \
+  -o jsonpath='{.status.conditions[*].message}'
+----
+
+---
+
+**Issue**: The `build` task shows `Succeeded` but the pod is no longer listed by `oc get pods`.
+
+**Solution**: Completed pods may be cleaned up by the Tekton pruner after a period of time. Logs are still available through `tkn` even after the pod is removed:
+
+[source,bash]
+----
+tkn pipelinerun logs coolstuff-full-run-01
+----
+
+---
+
+**Issue**: `oc get pipelinerun coolstuff-full-run-01 -w` does not update and stays in `Unknown`.
+
+**Solution**: The watch flag polls the API server. If the run is stuck, check for pending pods:
+
+[source,bash]
+----
+oc get pods -l tekton.dev/pipelineRun=coolstuff-full-run-01
+----
+
+If a pod is in `Pending`, describe it to see why it has not been scheduled:
+
+[source,bash]
+----
+oc describe pod -l tekton.dev/pipelineRun=coolstuff-full-run-01
+----
+
+---
+
+**Issue**: `coolstuff-full-run-02` also fails with `CouldntGetTask` even after creating the Task.
+
+**Solution**: Confirm the Task was created in the same namespace as the Pipeline:
+
+[source,bash]
+----
+oc get task deploy-coolstuff-app -n tekton-workshop
+----
+
+If the output shows `not found`, re-apply from the correct directory:
+
+[source,bash]
+----
+oc apply -f deploy-coolstuff-task.yaml
+----
+
+---
+
+**Issue**: The pipeline graph in the console does not show the red/green failure colours.
+
+**Solution**: Refresh the console page. The pipeline graph requires a WebSocket connection to stream status updates. If the connection was interrupted, the graph may not reflect the latest state until you reload.

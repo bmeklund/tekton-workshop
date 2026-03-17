@@ -464,71 +464,6 @@ Succeeded
 * Both `build` and `deploy` tasks completed
 * The failed `coolstuff-full-run-01` remains in the list as a historical record
 
-== Troubleshooting
-
-**Issue**: `tkn pipelinerun describe` does not show a `message` field with error details.
-
-**Solution**: Use the raw JSON output for the full condition message:
-
-[source,bash]
-----
-oc get pipelinerun coolstuff-full-run-01 \
-  -o jsonpath='{.status.conditions[*].message}'
-----
-
----
-
-**Issue**: The `build` task shows `Succeeded` but the pod is no longer listed by `oc get pods`.
-
-**Solution**: Completed pods may be cleaned up by the Tekton pruner after a period of time. Logs are still available through `tkn` even after the pod is removed:
-
-[source,bash]
-----
-tkn pipelinerun logs coolstuff-full-run-01
-----
-
----
-
-**Issue**: `oc get pipelinerun coolstuff-full-run-01 -w` does not update and stays in `Unknown`.
-
-**Solution**: The watch flag polls the API server. If the run is stuck, check for pending pods:
-
-[source,bash]
-----
-oc get pods -l tekton.dev/pipelineRun=coolstuff-full-run-01
-----
-
-If a pod is in `Pending`, describe it to see why it has not been scheduled:
-
-[source,bash]
-----
-oc describe pod -l tekton.dev/pipelineRun=coolstuff-full-run-01
-----
-
----
-
-**Issue**: `coolstuff-full-run-02` also fails with `CouldntGetTask` even after creating the Task.
-
-**Solution**: Confirm the Task was created in the same namespace as the Pipeline:
-
-[source,bash]
-----
-oc get task deploy-coolstuff-app -n tekton-workshop
-----
-
-If the output shows `not found`, re-apply from the correct directory:
-
-[source,bash]
-----
-oc apply -f deploy-coolstuff-task.yaml
-----
-
----
-
-**Issue**: The pipeline graph in the console does not show the red/green failure colours.
-
-**Solution**: Refresh the console page. The pipeline graph requires a WebSocket connection to stream status updates. If the connection was interrupted, the graph may not reflect the latest state until you reload.
-
 == Module summary
 
 Coolstuff Store's team now has the full picture. Pipelines run automatically, and when they fail, there's a clear path to the root cause: list runs, describe the failure, read the step logs, and fix the underlying issue.
@@ -556,7 +491,6 @@ By completing this module, you should now understand:
 * The diagnostic pattern for a failed pipeline: list to spot the failure, describe to identify the task, logs to find the root cause
 * How incomplete Task definitions surface as runtime failures and how to resolve them by creating the missing Task before re-running
 
-== Assets needed
+**Next steps:**
 
-. `content/modules/ROOT/assets/images/pipeline-run-detail-timing.png` -- OpenShift console PipelineRun detail view showing task-level timing information on the pipeline graph (clickable full-size)
-. `content/modules/ROOT/assets/images/pipeline-graph-failed.png` -- OpenShift console pipeline graph showing build in green Succeeded and deploy in red Failed (clickable full-size)
+xref:08-conclusion.adoc[Conclusion and next steps] summarizes the full workshop and provides resources for continuing your Tekton and OpenShift Pipelines journey.

@@ -2,7 +2,9 @@
 
 include::partial$_attributes.adoc[]
 
-Congratulations! You have completed the Building Pipelines using Tekton on OpenShift workshop.
+`Congratulations!` 
+
+You have completed the Building Pipelines using Tekton on OpenShift workshop.
 
 Coolstuff Store came in with manual deployments, slow release cycles, and no visibility into build status. You've left them with a fully automated CI/CD system: reusable Tasks, an end-to-end Pipeline pulling from a Git repository, monitoring tools for diagnosing failures, and Pipelines as Code automatically triggering runs on every push -- all without manual cluster intervention.
 
@@ -35,14 +37,20 @@ The most important concepts to carry forward:
 
 == Next steps
 
-=== Recommended topics to explore
+=== Additional learning paths
+
+Talk to your instructors if you want to explore further topics like: 
+
+* **Intermediate**: OpenShift GitOps with ArgoCD - basic or advanced workshops. Integrating pipelines with GitOps practices. Pair your CI pipeline with a GitOps-based CD workflow that automatically syncs Kubernetes resources from Git to the cluster. CI builds the artifact; Argo CD deploys it.
+* **Advanced**: Secure software supply chain with Advanced Developer Suite workshop. Secure your supply chain by adding signature steps and SBOM generation. Automatically sign pipeline artifacts and generate Software Bill of Materials (SBOM) entries for every build. Built into Red Hat OpenShift Pipelines or similar CI engines.
+* **Advanced**: Platform Engineering for success - with Red Hat Developer Hub. Enable your development teams by building an Internal Developer Portal with Developer Hub and Backstage.
+
+=== Other recommended topics to explore
 
 Build on what you've learned with these related areas:
 
-* **OpenShift GitOps with Argo CD** -- Pair your CI pipeline with a GitOps-based CD workflow that automatically syncs Kubernetes resources from Git to the cluster. CI builds the artifact; Argo CD deploys it.
 * **Container image builds with Buildah** -- Extend your pipeline with a build stage that uses the Buildah ClusterTask (or link:https://hub.tekton.dev/tekton/task/buildah[Tekton Hub `buildah` Task^]) to build and push a container image to a registry.
 * **OpenShift Pipelines Triggers** -- Before Pipelines as Code, Tekton Triggers handled webhook-to-PipelineRun conversion. Understanding Triggers helps when reading existing cluster configurations and when PAC is not available.
-* **Secure software supply chain with Tekton Chains** -- Automatically sign pipeline artifacts and generate Software Bill of Materials (SBOM) entries for every build. Built into Red Hat OpenShift Pipelines.
 
 === Practice projects
 
@@ -85,7 +93,18 @@ All references used across this workshop, organized by category.
 * link:https://hub.tekton.dev/[Tekton Hub^] -- Community catalog of reusable Tasks including `git-clone`, `buildah`, `kaniko`, and many more. Referenced in: Workshop details, Module 3.
 * link:https://developers.redhat.com/topics/ci-cd[Red Hat Developer: CI/CD^] -- Learning resources, blog posts, and tutorials on CI/CD with Red Hat technologies. Referenced in: Workshop details.
 
-== Share your feedback
+== Authors and contributors
+
+**Primary Author**: Red Hat Sweden, OpenShift SSA-team
+
+**Last Updated**: {docdate}
+
+**Workshop Version**: 1.0
+
+**Contact information**:
+
+* Technical questions: Contact your Red Hat account team
+* Content updates: Submit a pull request to the workshop repository
 
 Help improve this workshop for the next team:
 
