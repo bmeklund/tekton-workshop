@@ -22,8 +22,8 @@ By the end of this workshop, you'll have practical Red Hat OpenShift Pipelines s
 * Understand Tekton concepts and architecture -- explain how Tasks, Pipelines, and PipelineRuns work together
 * Create and run custom Tasks and Pipelines -- reduce manual deployment steps with reusable automation
 * Integrate Git repositories into pipelines -- trigger automated builds from code changes
-* Monitor and troubleshoot pipeline executions -- identify and resolve failures faster
 * Try out and work with pipelines as code -- storing and triggering flows from a git repo
+* Monitor and troubleshoot pipeline executions -- identify and resolve failures faster
 
 **Technical outcome**: A working CI/CD pipeline that builds and deploys an application from a Git repository on OpenShift.
 
@@ -34,6 +34,7 @@ By the end of this workshop, you'll have practical Red Hat OpenShift Pipelines s
 This workshop is designed for:
 
 * Developers who want to automate application builds and deployments
+* A CI/CD team managing central CI solutions for developer teams to use
 * Platform engineers looking to implement standardized CI/CD workflows
 * Anyone evaluating Red Hat OpenShift Pipelines for their organization
 
@@ -43,7 +44,6 @@ You should have:
 
 * Basic familiarity with containers or Kubernetes concepts
 * A web browser for accessing the OpenShift console
-* Access credentials provided in your lab environment
 * No prior Tekton or OpenShift Pipelines experience required
 
 == Coolstuff Store's project challenges

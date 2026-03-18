@@ -42,6 +42,8 @@ https://bmeklund.github.io/tekton-workshop/
 
 ### To install the needed components(operators and instances) run the below commands.
 
+#### As Cluster admin
+
 1. Install the OpenShift GitOps Operator
 
 ```sh
@@ -54,11 +56,11 @@ oc apply -f https://raw.githubusercontent.com/bmeklund/tekton-workshop/refs/head
 oc apply -f https://raw.githubusercontent.com/bmeklund/tekton-workshop/refs/heads/main/argocd/base/workshop-base.yaml
 ```
 
-3. When OpenShift Pipelines is installed - the Pipelines console-plugin needs to be enabled - otherwise the clustertasks from the OpenShift Pipelines operator won't be accessible from user projects.
+3. When OpenShift Pipelines is installed - the Pipelines console-plugin needs to be enabled - otherwise the clustertasks from the OpenShift Pipelines operator won't be accessible from user projects. The below action will enable Red Hat tasks to be used in user projects.
+
 ```sh
 Go to Ecosystem > Installed operators > OpenShift Pipelines operator. In the overview page on the right hand side click on the link showing piplines-console-plugin: Disabled below the Console-plugin header. Click Enable then Save in the pop-up. 
 ```
-This will enable Red Hat tasks to be used in user projects.
 
 ### Cleanup / Troubleshooting
 

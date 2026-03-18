@@ -36,11 +36,11 @@ Participants need access to:
 
 * OpenShift {ocp_version} multinode cluster (provided in the lab)
 * Gitea Git server (provided in the lab)
-* Web terminal accessible from the right panel in Showroom
+* Web terminal accessible from the OpenShift console
 
 === Network requirements
 
-* Internet connectivity is not required for this lab
+* Internet connectivity is required for this lab, the OpenShift environment used is cloud hosted
 * All required images and resources are pre-deployed in your lab environment
 
 == Environment setup
@@ -59,19 +59,50 @@ Before starting, verify the following:
 ** Username: `{OPENSHIFT_USERNAME}`
 ** Password: `{OPENSHIFT_PASSWORD}`
 
-* The web terminal in the right panel responds to commands
+* The web terminal is accessible and running:
+** {openshift_console_url}terminal[window=_blank]
 
 === Workshop setup
+. Before startin we need to log into the OpenShift web console to access our terminal
+.. Click the below link to open a Terminal via the OpenShift console:
+.. {openshift_console_url}terminal[window=_blank]
+.. You can log in with your user if needed:
+.. Username: `{OPENSHIFT_USERNAME}`
+.. Password: `{OPENSHIFT_PASSWORD}`
+. When logged in you might see this pop-up. Click on **Skip Tour**
++
+image::ocp-skip-tour.png[OpenShift Tour Pop-up,link=self,window=blank,width=700]
++
+. In the *Initialize Terminal* view enter the following:
+.. Project: Create Project
+.. Project Name: tekton-workshop-%OPENSHIFT_USERNAME%
++
+image::terminal-create-project.png[Initialize terminal,link=self,window=blank,width=700]
++
+. Click on start and wait for the terminal to load.
+.. Keep the tab/window with the terminal open during the whole workshop. You will work extensively in the terminal during the excersises.
++
+image::terminal-running.png[OpenShift Terminal running,link=self,window=blank,width=700]
 
-In the **Terminal** tab, log in to OpenShift using your credentials:
+[NOTE]
+====
+If you, anytime during the workshop, are logged out - run the below command to log in again
 
 [source,sh,role="copypaste"]
 ----
 oc login https://api.%APPS_HOSTNAME_SUFFIX%:6443 -u %OPENSHIFT_USERNAME% -p %OPENSHIFT_PASSWORD%
 ----
 
-NOTE: If the command does not work for CLI login, ask your facilitator for help.
+If the terminal window stops responding overall(the terminal runs as a pod in your project) try to open a new instance using the link provided above
+Or open it from the terminal icon in the top right corner or the OpenShift console as shown below.
 
+image::terminal-open-icon.png[OpenShift open terminal ,link=self,window=blank,width=400]
+
+If the command does not work for CLI login, ask your facilitator for help.
+
+====
+
+////
 Run the below command in the terminal to create the OpenShift project(namespace) you will use throughout this workshop:
 
 [source,sh,role="copypaste"]
@@ -84,10 +115,11 @@ Expected output:
 ----
 Now using project "tekton-workshop-%OPENSHIFT_USERNAME%" on server "...".
 ----
+////
 
 === Setup validation
 
-Run these commands in the terminal tab on the right to verify your environment is ready:
+Run these commands in the **Terminal** tab to verify your environment is ready:
 
 ==== Verify OpenShift CLI version
 [source,sh,role="copypaste"]

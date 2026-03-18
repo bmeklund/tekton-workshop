@@ -22,6 +22,8 @@ By the end of this module, you'll be able to:
 
 == Pipelines, Parameters, and Workspaces explained
 
+[sidebar]
+--
 A Pipeline is a collection of Tasks with defined execution order and shared inputs. Three concepts are key to understanding how Pipelines work:
 
 * **`runAfter`**: Declares that a Task must wait for another to complete before it starts. This defines sequential ordering without coupling Tasks directly.
@@ -29,6 +31,7 @@ A Pipeline is a collection of Tasks with defined execution order and shared inpu
 * **Workspace mapping**: A Pipeline declares workspaces and maps them to each Task's workspace. All Tasks in a Pipeline can share the same underlying storage.
 
 NOTE: A PipelineRun is to a Pipeline what a TaskRun is to a Task. It supplies the runtime values (parameters, workspace bindings) and creates a record of the execution.
+--
 
 [#exercise-1]
 == Exercise 1: Create your first Pipeline
@@ -194,6 +197,8 @@ Tasks
  summarize  summarize-build      build
 ----
 
+* `tkn pipeline describe` shows 2 tasks with correct `runAfter` ordering
+
 === Verify
 
 Confirm the Pipeline is registered in the cluster:
@@ -202,9 +207,12 @@ Confirm the Pipeline is registered in the cluster:
 ----
 oc get pipeline coolstuff-build-pipeline
 ----
-
+Expected output:
+----
+NAME                       AGE
+coolstuff-build-pipeline   17s
+----
 * Pipeline name is `coolstuff-build-pipeline`
-* `tkn pipeline describe` shows 2 tasks with correct `runAfter` ordering
 
 Open the OpenShift console and view the pipeline in the Pipelines section. Click **Pipelines** then **Pipelines** again and in the center view click the **coolstuff-build-pipeline**
 
@@ -298,7 +306,7 @@ Confirm the PipelineRun completed successfully:
 [source,sh,role="copypaste"]
 ----
 oc get pipelinerun coolstuff-pipeline-run-01 \
-  -o jsonpath='{.status.conditions[0].reason}'
+  -o jsonpath='{.status.conditions[0].reason}'&& echo
 ----
 
 Expected output:
@@ -385,9 +393,28 @@ https://gitea-workshop-gitea.%APPS_HOSTNAME_SUFFIX%/%OPENSHIFT_USERNAME%/coolstu
 
 === Update the Pipeline to add a git clone task
 
-This time we will update the pipeline in the OpenShift console using the Pipeline Builder.
+[sidebar]
+--
 
-NOTE: Doing it manually in the console is a good way to learn about the pipeline builder and it's capabilities. It's not something you do in a production or even test environment though. You can also do this manually using the CLi as before, or more commonly done - using GitOps and ArgoCD.  
+image::openshift-pipelines-logo.png[OpenShift Pipelines,link=self,window=blank,width=100]
+
+You have used OpenShift Pipelines in the web console previously to view the tekton resources you created via the CLi.
+
+But the OpenShift Pipelines console can be used for more, it provides a graphical interface to create, manage, and visualize CI/CD pipelines
+
+Key Features:
+
+* **Pipeline Builder**: Create pipelines visually using pre-installed tasks (e.g., git-clone, s2i-nodejs, buildah) without writing YAML manually.
+* **PipelineRuns & TaskRuns**: View execution history, status, logs, and events for pipeline runs directly in the console.
+* **Topology View**: Visualize pipeline flows and their relationships with applications and resources.
+* **Statistics & Metrics**: With the OpenShift Pipelines console plugin (requires OpenShift 4.15+ and Tekton Results), view execution statistics like success rate, duration, and pipeline run trends.
+* **Manual Approvals**: Tech preview support for approval steps in pipelines via ApprovalTask. 
+
+NOTE: Doing it manually in the console is a good way to learn about OpenShift Pipelines and it's capabilities. It's not something you do in a production or even test environment though. You can also do this manually using the CLi as before, or more commonly done - using GitOps and ArgoCD.  
+
+--
+
+This time we will update our pipeline in the OpenShift console using the Pipeline Builder.
 
 . Go to the OpenShift console, fold out Pipelines and then click Pipelines. Click the already created **coolstuff-build-pipeline** and then on the right side click on **Actions** and **Edit Pipeline**.
 +
@@ -413,7 +440,7 @@ NOTE: The git-clone task we use here is a default task provided by the OpenShift
 |===
 | Parameter Value | Display Name
 | Display name  | git-clone
-| URL | {gitea_console_url}{OPENSHIFT_USERNAME}/coolstuff-app.git
+| URL | \https://gitea-workshop-gitea.%APPS_HOSTNAME_SUFFIX%/{OPENSHIFT_USERNAME}/coolstuff-app.git
 | output | shared-data
 |===
 +
@@ -527,7 +554,7 @@ First check the status using oc
 [source,sh,role="copypaste"]
 ----
 oc get pipelinerun coolstuff-build-pipeline-CHANGE_ME \
-  -o jsonpath='{.status.conditions[0].reason}'
+  -o jsonpath='{.status.conditions[0].reason}'&& echo
 ----
 
 Expected output:

@@ -22,6 +22,8 @@ By the end of this module, you'll be able to:
 
 == Multi-step Tasks and Workspaces explained
 
+[sidebar]
+--
 In Module 1, your Task had 1 step. Real CI/CD workflows need multiple steps that run in sequence, where each step builds on the previous one. For example:
 
 * Step 1 clones source code from a Git repository
@@ -35,6 +37,7 @@ To share data between steps, Tekton uses **Workspaces**. A Workspace is a shared
 * **ConfigMap or Secret**: Read-only data injected as files into the Task.
 
 NOTE: A Workspace is declared on the Task definition. A TaskRun binds the Workspace to an actual storage backend, such as a PVC. This separation keeps Tasks reusable across environments with different storage configurations.
+--
 
 [#exercise-1]
 == Exercise 1: Create a multi-step Task with Parameters
@@ -263,7 +266,21 @@ Expected output:
 ----
 taskrun.tekton.dev/build-coolstuff-run-01 created
 ----
-
++
+. Now check the PVC again:
++
+[source,sh,role="copypaste"]
+----
+oc get pvc workshop-pvc
+----
++
+Expected output:
++
+----
+NAME           STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+workshop-pvc   Bound    pvc-d6f95e1a-2d50-4928-8f52-9b57f649c9bd   1Gi        RWO            gp3-csi        <unset>                 37s
+----
++
 . Follow the logs until the TaskRun completes:
 +
 [source,sh,role="copypaste"]
@@ -300,7 +317,7 @@ Confirm all 3 steps completed and the TaskRun succeeded:
 [source,sh,role="copypaste"]
 ----
 oc get taskrun build-coolstuff-run-01 \
-  -o jsonpath='{.status.conditions[0].reason}'
+  -o jsonpath='{.status.conditions[0].reason}'&& echo
 ----
 
 Expected output:
@@ -312,7 +329,7 @@ Succeeded
 [source,sh,role="copypaste"]
 ----
 oc get taskrun build-coolstuff-run-01 \
-  -o jsonpath='{.status.steps[*].name}'
+  -o jsonpath='{.status.steps[*].name}'&& echo
 ----
 
 Expected output:
@@ -409,22 +426,14 @@ Note that the two different TaskRuns use the same underlying Task.
 
 image::taskrun-list-console.png[OpenShift console TaskRuns list showing build-coolstuff-run-01 and build-coolstuff-run-02 both with green Succeeded status badges,link=self,window=blank,width=700,title="TaskRuns list demonstrating Task reuse with different parameters"]
 
-=== Verify
+== Module summary
 
-Confirm both TaskRuns completed successfully using the cli too:
-
-[source,sh,role="copypaste"]
-----
-tkn taskrun list
-----
+Coolstuff Store's manager can now see a recognizable CI/CD flow: validate, test, and package, running automatically for any service. You've also shown that 1 Task definition is enough to build the entire service portfolio, just by changing parameters.
 
 * Both `build-coolstuff-run-01` and `build-coolstuff-run-02` show `Succeeded`
 * Each TaskRun used the same `build-coolstuff-app` Task definition
 * Each TaskRun produced a different artifact name based on the parameters supplied
 
-== Module summary
-
-Coolstuff Store's manager can now see a recognizable CI/CD flow: validate, test, and package, running automatically for any service. You've also shown that 1 Task definition is enough to build the entire service portfolio, just by changing parameters.
 
 **What you accomplished:**
 

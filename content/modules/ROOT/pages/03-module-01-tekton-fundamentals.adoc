@@ -22,26 +22,47 @@ By the end of this module, you'll be able to:
 
 == Tekton and OpenShift Pipelines overview
 
+[sidebar]
+--
+image::tekton-logo.png[Tekton, 300]
+
 Red Hat OpenShift Pipelines is a cloud native CI/CD (Continuous Integration/Continuous Delivery) solution built on link:https://tekton.dev/[Tekton^], an open source project under the Continuous Delivery Foundation. Tekton runs CI/CD workflows as Kubernetes-native resources, making pipelines portable, reproducible, and manageable alongside your application code.
 
-The core building blocks of Tekton are:
+* Standard CI/CD pipeline definition based on Tekton
+* Build images with Kubernetes tools such as S2I, Buildah, Buildpacks, Kaniko, etc
+* Deploy applications to multiple platforms such as Kubernetes, serverless and VMs
+* Easy to extend and integrate with existing tools
+* Scale pipelines on-demand
+* Portable across any Kubernetes platform
+* Designed for microservices and decentralized teams
+* Integrated with the OpenShift Developer Console
+
+https://tekton.dev/[Tekton^] provides Kubernetes-style resources for creating serverless 
+CI/CD-style pipelines on Kubernetes.
+
+The custom resources, or core building blocks, of Tekton and OpenShift Pipelines are:
 
 * **Step**: A step is an operation in a CI/CD workflow, such as running some unit tests for a Python web app, or the compilation of a Java program. Tekton performs each step with a container image you provide. For example, you may use the official Go image to compile a Go program in the same manner as you would on your local workstation (go build).
-* **Task**: A reusable unit of work containing 1 or more Steps running in order. Tekton runs a task in the form of a Kubernetes pod, each Step runs inside a container image. Examples include cloning a Git repository, building a container image, or running tests.
-* **Pipeline**: An collection of Tasks that forms a CI/CD workflow. Pipelines can run Tasks sequentially or in parallel and pass data between them using Workspaces and Parameters.
-
-Tasks and pipelines are specified as custom resources in a Kubernetes cluster.
+* **Task** - a reusable unit of work, containing 1 or more Steps running in order performing a specific task. Tekton runs a task in the form of a Kubernetes pod, each Step runs inside a container image. Examples include cloning a Git repository, building a container image, or running tests.
+* **Pipeline** - A collection of Tasks that forms a CI/CD workflow. Pipelines can run Tasks sequentially or in parallel and pass data between them using Workspaces and Parameters. The Pipeline is the definition of the pipeline and the **Tasks** that it should perform.
 
 image::concept-tasks-pipelines.png[Diagram showing the relationship between Tekton Tasks, Pipelines, TaskRuns, and PipelineRuns,link=self,window=blank,width=700,title="Tekton component relationships"]
 
+* **TaskRun** - the result of a single execution of a **Task**. When you trigger a Task, Tekton creates a TaskRun resource that tracks the execution status and stores its output.
+* **PipelineRun** - A specific single execution of a Pipeline. A PipelineRun tracks the status of every Task in the Pipeline and stores the overall result.You can view the status of your CI/CD workflow, including the specifics of each task execution with pipelineRuns. A PipelineRun is th result of running an instance of **Pipeline**, which includes a number of **TaskRun**
+
+image::tekton-architecture.png[Tekton Architecture, 600]
+
 Related to these components we also have the following types:
 
-* **PipelineRun**: A specific single execution of a Pipeline. A PipelineRun tracks the status of every Task in the Pipeline and stores the overall result.You can view the status of your CI/CD workflow, including the specifics of each task execution with pipelineRuns.
-* **TaskRun**: A single execution of a Task. When you trigger a Task, Tekton creates a TaskRun resource that tracks the execution status and stores its output.
+* **PipelineResource** - inputs (e.g., git repository) and outputs (e.g., image registry) to and out of a **Pipeline** or **Task**
+* **Triggers** - allows you to instantiate pipelines based on events. For example, you can trigger the instantiation and execution of a pipeline every time a PR is merged against a GitHub repository. You can also build a user interface that launches specific Tekton triggers.
+* **Workspaces** - Workspaces are similar to Volumes, they allow a Task to store inputs and/or outputs, share data between Tasks etc.
+* **...and more**
 
-image::concept-runs.png[Diagram showing the relationship between Pipeline and PipelineRun,link=self,window=blank,width=700,title="Tekton component relationships"]
+image::concept-runs.png[Diagram showing the relationship between Pipeline, PipelineResources and PipelineRuns,link=self,window=blank,width=500,title="Tekton component relationships"]
 
-NOTE: Red Hat OpenShift Pipelines {pipelines_version} also includes Triggers, Workspaces, and ClusterTasks, which you'll explore in later modules.
+--
 
 [#exercise-1]
 == Exercise 1: Log in and explore your environment
@@ -51,7 +72,7 @@ Coolstuff Store's OpenShift cluster has Red Hat OpenShift Pipelines {pipelines_v
 . Open the OpenShift console in your browser. Click the link below to open the OpenShift console in a new tab:
 ** {openshift_console_url}/k8s/cluster/projects/tekton-workshop-%OPENSHIFT_USERNAME%[window=_blank]
 
-. Log in with your credentials:
+. If needed, log in with your credentials:
 
 * **Username**: `{OPENSHIFT_USERNAME}`
 * **Password**: `{OPENSHIFT_PASSWORD}`

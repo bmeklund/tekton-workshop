@@ -1,4 +1,4 @@
-.Building pipelines using Tekton on OpenShift
+
 * xref:01-overview.adoc[Workshop overview]
 * xref:02-details.adoc[Workshop details]
 * xref:03-module-01-tekton-fundamentals.adoc[Module 1: Tekton fundamentals]
@@ -20,5 +20,4 @@
 * xref:07-module-05-monitoring-troubleshooting.adoc[Module 5: Monitoring and troubleshooting]
 ** xref:07-module-05-monitoring-troubleshooting.adoc#exercise-1[Exercise 1: Monitor pipeline status]
 ** xref:07-module-05-monitoring-troubleshooting.adoc#exercise-2[Exercise 2: Diagnose and fix a failing pipeline]
-
 * xref:08-conclusion.adoc[Conclusion and next steps]
