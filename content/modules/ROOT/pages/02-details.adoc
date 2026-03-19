@@ -73,14 +73,18 @@ Before starting, verify the following:
 +
 image::ocp-skip-tour.png[OpenShift Tour Pop-up,link=self,window=blank,width=700]
 +
-. In the *Initialize Terminal* view enter the following:
+[NOTE]
+====
+. If it's the first tine you start the Terminal you will need to initialize it. In the *Initialize Terminal* view enter the following:
 .. Project: Create Project
 .. Project Name: tekton-workshop-%OPENSHIFT_USERNAME%
 +
 image::terminal-create-project.png[Initialize terminal,link=self,window=blank,width=700]
 +
 . Click on start and wait for the terminal to load.
-.. Keep the tab/window with the terminal open during the whole workshop. You will work extensively in the terminal during the excersises.
+====
+
+. Keep the Terminal tab/window with the active terminal open during the whole workshop. You will work extensively in the terminal during the excersises.
 +
 image::terminal-running.png[OpenShift Terminal running,link=self,window=blank,width=700]
 

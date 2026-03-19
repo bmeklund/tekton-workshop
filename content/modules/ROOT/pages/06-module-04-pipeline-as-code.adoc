@@ -228,7 +228,7 @@ image::gitea-add-webhook.png[Add webhook in Gitea,link=self,window=blank,width=7
 * **Target URL**: `+https://pipelines-as-code-controller-openshift-pipelines.%APPS_HOSTNAME_SUFFIX%+`
 * **Secret**: paste the webhook secret value you generated (`$WEBHOOK_SECRET`)
 * **Trigger on**: select *Custom Events* 
-** Then mark **Push events** and **Pull Request events**
+** Then mark **Push**, **Pull Request Comment** and **Pull Request**
 +
 . Click **Add webhook**.
 
@@ -394,16 +394,65 @@ Expected output includes:
 [summarize : summarize] Status      : SUCCESS -- ready for deployment
 ----
 
-. View the pipeline run in the OpenShift console. In the **Developer** perspective, navigate to **Pipelines**, then **PipelineRuns**. The PAC-triggered run will be listed alongside the manually created runs from earlier modules.
-
-// TODO: Add screenshot of the PipelineRuns list showing a PAC-triggered run alongside manually created runs
+. View the pipeline run in the OpenShift console. 
+. Navigate to **Pipelines**, then **PipelineRuns**. 
+.. The PAC-triggered run will be listed alongside the manually created runs from earlier modules:
+ *coolstuff-build-push-RANDOM_ID.*
++
 image::pac-triggered-pipelinerun.png[OpenShift console PipelineRuns list showing a PAC-triggered run with a commit SHA in the name alongside previous manually created runs,link=self,window=blank,width=700,title="PAC-triggered PipelineRun created automatically on Git push"]
++
+. Click on the PipelineRun to see more details, like commit-id, triggering event and SHA.
++
+image::pac-triggered-run-details.png[OpenShift console PipelineRuns list showing a PAC-triggered run with a commit SHA in the name alongside previous manually created runs,link=self,window=blank,width=700,title="Details on the PAC run, with SHA"]
 
 === Verify
+
+List the different pipelineruns and look at status of the runs using the cli.
 
 [source,sh,role="copypaste"]
 ----
 tkn pipelinerun list | head -5
+----
+
+Look at more details for the pac-run using the terminal:
+
+[source,sh,role="copypaste"]
+----
+oc get pipelinerun coolstuff-build-push-lvkbs -o jsonpath='{.metadata.annotations}' | jq
+----
+
+Expected output:
+[source, json]
+----
+{
+  "chains.tekton.dev/signed": "true",
+  "pipelinesascode.tekton.dev/branch": "refs/heads/main",
+  "pipelinesascode.tekton.dev/controller-info": "{\"name\":\"default\",\"configmap\":\"pipelines-as-code\",\"secret\":\"pipelines-as-code-secret\", \"gRepo\": \"pipelines-as-code\"}",
+  "pipelinesascode.tekton.dev/event-type": "push",
+  "pipelinesascode.tekton.dev/git-auth-secret": "pac-gitauth-dghdpx",
+  "pipelinesascode.tekton.dev/git-provider": "gitea",
+  "pipelinesascode.tekton.dev/log-url": "https://console-openshift-console.apps.cluster-twf54.twf54.sandbox2398.opentlc.com/k8s/ns/tekton-workshop-user1/tekton.dev~v1~PipelineRun/coolstuff-build-push-lvkbs",
+  "pipelinesascode.tekton.dev/max-keep-runs": "5",
+  "pipelinesascode.tekton.dev/on-event": "[push]",
+  "pipelinesascode.tekton.dev/on-target-branch": "[main]",
+  "pipelinesascode.tekton.dev/original-prname": "coolstuff-build-push",
+  "pipelinesascode.tekton.dev/repo-url": "https://gitea-workshop-gitea.apps.cluster-twf54.twf54.sandbox2398.opentlc.com/user1/coolstuff-app",
+  "pipelinesascode.tekton.dev/repository": "coolstuff-app",
+  "pipelinesascode.tekton.dev/scm-reporting-plr-started": "true",
+  "pipelinesascode.tekton.dev/sender": "user1",
+  "pipelinesascode.tekton.dev/sha": "87efe0e239cf585d646bc93f6800f482c2d9e5c3",
+  "pipelinesascode.tekton.dev/sha-title": "Update .tekton/push-pipeline.yaml\n",
+  "pipelinesascode.tekton.dev/sha-url": "https://gitea-workshop-gitea.apps.cluster-twf54.twf54.sandbox2398.opentlc.com/user1/coolstuff-app/commit/87efe0e239cf585d646bc93f6800f482c2d9e5c3",
+  "pipelinesascode.tekton.dev/source-branch": "refs/heads/main",
+  "pipelinesascode.tekton.dev/source-repo-url": "https://gitea-workshop-gitea.apps.cluster-twf54.twf54.sandbox2398.opentlc.com/user1/coolstuff-app",
+  "pipelinesascode.tekton.dev/state": "completed",
+  "pipelinesascode.tekton.dev/url-org": "user1",
+  "pipelinesascode.tekton.dev/url-repository": "coolstuff-app",
+  "results.tekton.dev/record": "tekton-workshop-user1/results/d54963a0-1cc6-48d2-896c-107f1bd7a00d/records/d54963a0-1cc6-48d2-896c-107f1bd7a00d",
+  "results.tekton.dev/recordSummaryAnnotations": "{\"repo\":\"coolstuff-app\",\"commit\":\"87efe0e239cf585d646bc93f6800f482c2d9e5c3\",\"eventType\":\"push\"}",
+  "results.tekton.dev/result": "tekton-workshop-user1/results/d54963a0-1cc6-48d2-896c-107f1bd7a00d",
+  "results.tekton.dev/stored": "true"
+}
 ----
 
 * The most recent PipelineRun name includes the commit SHA
@@ -415,48 +464,79 @@ tkn pipelinerun list | head -5
 
 One of the most useful features of Pipelines as Code is the ability to control pipeline runs with comments on a pull request. In this exercise, you'll create a pull request in Gitea, observe the automatic pipeline trigger, and use `/retest` to re-trigger a run without pushing new code.
 
-=== Create a pull request to trigger a pipeline
+=== Create a feature branch and work with pull requests
 
-. In the Gitea web UI, navigate to your `coolstuff-app` repository.
+. In the link:{gitea_console_url}[Gitea web ui^], navigate to your `coolstuff-app` repository.
 
-. Click **New file** (or edit an existing file like `README.md`).
+. Click **Add File** then **New file**.
 
-. Make a small change -- for example, add a line `## Module 5 update` to the `README.md` file.
+. Name the file **change.txt** and add a line in the file -- for example, add a line `## Module 4 update`.
 
-. Set the commit message to `Add module 5 update note`.
+. Set the commit message to `Add module 4 update note`.
 
-. Instead of committing directly to `main`, select **Create a new branch for this commit**. Name the branch `feature/module-5-update`.
+. Instead of committing directly to `main`, select **Create a new branch for this commit**. Name the branch `feature/module-4-update`.
 
-. Click **Propose file change** to create the branch and open a pull request.
+. Click **Propose file change** to create the branch. 
++
+image::pac-new-file.png[Gitea new file added and committed,link=self,window=blank,width=700,title="New file committed, pull request waiting"]
++
+. Click on new Pull Request to open a pull request to merge your change into the **main** branch.
+.. On the pull request creation page, confirm the base branch is `main` and click **Create Pull Request**.
++
+image::pac-pullrequest.png[Gitea create pull request,link=self,window=blank,width=700]
++
+. Verify that your branch has been created.
+. Using the terminal verify that no new pipelineRun has been triggered.
+.. Since we only have the main branch configured to trigger on push no PipelineRun will be started for feature branches.
++
+[source,sh,role="copypaste"]
+----
+oc get pipelinerun
+----
++
+. Click *Create merge commit* and then Merge your pull request to main. This will trigger a new pipelineRun.
 
-. On the pull request creation page, confirm the base branch is `main` and click **Create Pull Request**.
+=== Add triggers on Pull Request events
 
-. Return to the **Terminal** tab and watch for a new PipelineRun triggered by the pull request event:
+. To fix pipelineRuns on pull request we need to add a trigger to our pipelinerun file in the **.tekton** folder in Gitea.
+.. Let's take a look at the `.tekton/push-pipeline.yaml` file in Gitea. It contains annotations only includes `push` and `main` as a trigger events. 
+. We will now update the file to add pull request support as shown below.
+.. To add pull request triggering, edit `.tekton/push-pipeline.yaml` in Gitea and update the annotation:
++
+[source,yaml]
+----
+pipelinesascode.tekton.dev/on-event: "[push, pull_request]"
+----
++
+Commit this change to `main` 
+.
+. Return to the **Terminal** tab and watch for a new PipelineRun triggered by the push event:
 +
 [source,sh,role="copypaste"]
 ----
 oc get pipelinerun -w
 ----
-+
-NOTE: If no pull request event trigger appeared, check that your `.tekton/push-pipeline.yaml` annotation includes `pull_request` as a trigger event. Alternatively, update the file to add pull request support as shown below.
+. When the run has completed, edit the `change.txt` file by clickin on the file in the repository and then cliciking on the pencil icon on the right side.
+.. Add a new line below the first and then scroll down to the bottom and choose **Create a new branch for this commit and start a pull request**
+.. Name the branch `feature/module4-newedit` then click on *Propose file change*
+. Click on *New Pull Request* then Click on *Create Pull request*. This will now trigger a pipelineRun in OpenShift.
+. In the OpenShift console in the left hand menu fold out *Pipelines* then click *Pipelines*. In the center view click on *Repositories*.
+.. In the list you can see the status of the latest run and see the Event is `pull_request`.
+.. Open up the pipelineRun to see more details.
 
-. To add pull request triggering, edit `.tekton/push-pipeline.yaml` in Gitea and update the annotation:
-+
-[source,yaml]
-----
-    pipelinesascode.tekton.dev/on-event: "[push, pull_request]"
-----
-+
-Commit this change to `main` and re-open or update the pull request.
+image::pac-pullrequest-run.png[Gitea pull request triggered,link=self,window=blank,width=700]
 
 === Use GitOps commands in pull request comments
 
-Once a pipeline run has completed for the pull request, you can control re-execution using PR comments.
+Once a pipeline run has completed for the pull request, you can control re-execution using PR comments. 
 
-. In the Gitea pull request, click **Comment**.
-
-. Type `/retest` in the comment body and submit.
+. In Gitea, open up the previous pull request.
 +
+image::pac-reopen-pullrequest.png[Gitea open pull request,link=self,window=blank,width=700]
++
+. Click **Comment** and type `/retest` in the comment body and submit.
++
+
 PAC detects the comment from an authorized user and triggers a new PipelineRun for the same commit. This is useful when you want to retry a CI run without pushing new code -- for example, after a transient infrastructure failure.
 
 . Watch the new run appear:
@@ -480,19 +560,45 @@ Available GitOps commands, as documented in the link:https://pipelinesascode.com
 
 [source,sh,role="copypaste"]
 ----
-tkn pipelinerun list
+tkn pipelinerun list -o json | jq '.items[] | {name: .metadata.name, sha: .metadata.labels["pipelinesascode.tekton.dev/sha"], status: .status.conditions[0].reason}'
 ----
 
-* Multiple PipelineRuns exist with the same commit SHA in their names (showing the `/retest` triggered a new run)
-* Status of `/retest`-triggered run shows `Succeeded`
+* Multiple PipelineRuns exist with the same commit SHA in their names (showing the `/retest` triggered a new run on the same commit)
+* Status of the different runs
 
-[source,sh,role="copypaste"]
+[source, json]
 ----
-oc get repository coolstuff-app \
-  -o jsonpath='{.status.lastPipelineRuns}'
+{
+  "name": "coolstuff-build-push-49s2d",
+  "sha": "4b6a3c4f77745d7e2f742574d5ae7ed2d6ac2dfa",
+  "status": "Cancelled"
+}
+{
+  "name": "coolstuff-build-push-xj2hf",
+  "sha": "4b6a3c4f77745d7e2f742574d5ae7ed2d6ac2dfa",
+  "status": "Succeeded"
+}
+{
+  "name": "coolstuff-build-push-bqr4v",
+  "sha": "4b6a3c4f77745d7e2f742574d5ae7ed2d6ac2dfa",
+  "status": "Succeeded"
+}
+{
+  "name": "coolstuff-build-push-4wd2p",
+  "sha": "783c132b71495c4c5dc8985ff90738867c5c75e6",
+  "status": "Succeeded"
+}
+{
+  "name": "coolstuff-build-push-dbrqf",
+  "sha": "6bd30dd1a55b8f0c6cd4d739aaef36e27a3d48c9",
+  "status": "Succeeded"
+}
+{
+  "name": "coolstuff-build-push-h6hb9",
+  "sha": "b3cf23d18e17701ad4b7f7891fbe3b0f3b0c8548",
+  "status": "Succeeded"
+}
 ----
-
-* The `lastPipelineRuns` field shows recent run history managed by PAC
 
 == Module summary
 
