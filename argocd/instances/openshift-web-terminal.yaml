@@ -5,7 +5,8 @@ metadata:
   namespace: openshift-operators
 spec:
   channel: fast
-  installPlanApproval: Automatic
+  startingCSV: web-terminal.v1.10.1 #Latest version with the tkn cli, awaiting fix
+  installPlanApproval: Manual
   name: web-terminal
   source: redhat-operators
   sourceNamespace: openshift-marketplace
