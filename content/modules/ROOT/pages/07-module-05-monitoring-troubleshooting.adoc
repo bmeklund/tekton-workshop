@@ -21,7 +21,8 @@ By the end of this module, you'll be able to:
 * Fix a broken pipeline and confirm recovery with a successful re-run
 
 == Understanding pipeline status
-
+[sidebar]
+--
 Tekton uses Kubernetes-style status conditions to communicate the state of every TaskRun and PipelineRun. Understanding these fields helps you triage failures quickly.
 
 Key status fields:
@@ -32,6 +33,7 @@ Key status fields:
 * **`COMPLETIONTIME`**: Populated only when a run finishes. Comparing this to `STARTTIME` gives you the actual duration.
 
 NOTE: When a Pipeline has multiple Tasks and 1 fails, Tekton cancels any remaining Tasks that depend on the failed one. Tasks that are independent (not in the `runAfter` chain of the failed Task) may still complete.
+--
 
 [#exercise-1]
 == Exercise 1: Monitor pipeline status with CLI and console tools
@@ -40,14 +42,14 @@ The pipeline runs from Module 3 are still in the cluster. In this exercise, you'
 
 . In the **Terminal** tab, confirm you are in the correct project:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
-oc project tekton-workshop
+oc project tekton-workshop-%OPENSHIFT_USERNAME%
 ----
 
 . List all PipelineRuns in the project and check their status:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn pipelinerun list
 ----
@@ -55,14 +57,17 @@ tkn pipelinerun list
 Expected output:
 +
 ----
-NAME                         STARTED          DURATION   STATUS
-coolstuff-pipeline-run-02    10 minutes ago   2m30s      Succeeded
-coolstuff-pipeline-run-01    15 minutes ago   40s        Succeeded
+NAME                              STARTED          DURATION   STATUS
+coolstuff-build-push-sje33k       5 minutes ago    48s        Succeeded
+coolstuff-build-pipeline-xnj10j   10 minutes ago   35s        Succeeded
+coolstuff-pipeline-run-02         20 minutes ago   2m30s      Succeeded
+coolstuff-pipeline-run-01         25 minutes ago   40s        Succeeded
+...
 ----
 
 . Inspect the full status of `coolstuff-pipeline-run-02`. This shows which Task ran in which order and how long each took:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn pipelinerun describe coolstuff-pipeline-run-02
 ----
@@ -72,20 +77,20 @@ Expected output includes:
 ----
 Name:           coolstuff-pipeline-run-02
 ...
-Status
-REASON     START TIME   COMPLETIONTIME
-Succeeded  ...          ...
-
+🌡️ Status
+STARTED              DURATION   STATUS
+25 minutes ago       35s.       Succeeded
+...
 TaskRuns
  NAME                                          TASK NAME      STARTED         DURATION   STATUS
- coolstuff-pipeline-run-02-fetch-source-...   fetch-source   10 minutes ago  1m55s      Succeeded
- coolstuff-pipeline-run-02-build-...          build          8 minutes ago   25s        Succeeded
- coolstuff-pipeline-run-02-summarize-...      summarize      7 minutes ago   10s        Succeeded
+ coolstuff-pipeline-run-02-fetch-source-...   fetch-source    10 minutes ago  1m55s      Succeeded
+ coolstuff-pipeline-run-02-build-...          build           8 minutes ago   25s        Succeeded
+ coolstuff-pipeline-run-02-summarize-...      summarize       7 minutes ago   10s        Succeeded
 ----
 
 . List the Kubernetes pods that were created by the PipelineRun. Each TaskRun creates 1 pod:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get pods -l tekton.dev/pipelineRun=coolstuff-pipeline-run-02
 ----
@@ -103,7 +108,7 @@ NOTE: Tekton pods show `Completed` (not `Running`) after a task finishes. This i
 
 . Retrieve logs for the `summarize` task step specifically:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn pipelinerun logs coolstuff-pipeline-run-02 -t summarize
 ----
@@ -112,27 +117,35 @@ The `-t` flag filters logs to a single task name. This is useful when a pipeline
 
 . View recent cluster events sorted by timestamp to catch infrastructure-level issues:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get events --sort-by='.lastTimestamp' | tail -20
 ----
 
-. In the OpenShift console, open the **Developer** perspective and navigate to **Pipelines**, then select `coolstuff-build-pipeline`. Click **PipelineRuns** to see a list of all runs with their status, duration, and start time.
+. In the OpenShift console, navigate to **Pipelines**, then Click **Pipelines** and select `coolstuff-build-pipeline`. Click **PipelineRuns** to see a list of all runs with their status, duration, and start time.
 
-. Click `coolstuff-pipeline-run-02` to open the pipeline graph. Each node shows its status icon and duration. Hover over a node to see its TaskRun name and timing details.
+. Click `coolstuff-pipeline-run-02` to open the pipeline graph. Each node shows its status icon and duration. Hover over a node(e.g. _build_) to see its TaskRun name(_validate, test, package_) and timing details.
 
-// TODO: Add screenshot of the PipelineRun detail page in the OpenShift console showing the pipeline graph with timing information on each node
 image::pipeline-run-detail-timing.png[OpenShift console PipelineRun detail view showing the 3-stage pipeline graph with duration overlays on each task node,link=self,window=blank,width=700,title="PipelineRun detail view with per-task timing"]
 
 === Verify
 
 Confirm you can retrieve task-level information from the CLI:
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
-tkn pipelinerun describe coolstuff-pipeline-run-02 \
-  -o jsonpath='{range .status.pipelineRunStatusFields.taskRuns[*]}{.pipelineTaskName}{"\t"}{.status.conditions[0].reason}{"\n"}{end}'
+tkn pipelinerun describe coolstuff-pipeline-run-02 -o jsonpath='{range .status.childReferences[*]}{.pipelineTaskName}{"\n"}{end}'
 ----
+
+[source,sh,role="copypaste"]
+----
+tkn taskrun list -o json | jq -r --arg pr "coolstuff-pipeline-run-02" '.items[] | select(.metadata.labels["tekton.dev/pipelineRun"] == $pr) | "Task: \(.metadata.labels["tekton.dev/pipelineTask"])  [\(.status.conditions[0].status) / \(.status.conditions[0].reason)]",(.status.steps[]? | "  step: \(.name)  → \(.terminated.reason // "Running")")'
+----
+
+////
+TODO: Check result from this 
+tkn taskrun list -o json | jq -r --arg pr "coolstuff-pipeline-run-02" '.items[] | select(.metadata.labels["tekton.dev/pipelineRun"] == $pr) | [(.metadata.labels["tekton.dev/pipelineTask"] // "-"),(.status.conditions[0].status // "-"),(.status.conditions[0].reason // "-")] | @tsv' | column -t
+////
 
 * Each task name is listed with its status reason
 * All tasks show `Succeeded`
@@ -147,7 +160,7 @@ Knowing how to monitor a healthy pipeline is half the skill. The other half is d
 
 . Create a `coolstuff-full-pipeline` Pipeline. It references a `deploy-coolstuff-app` Task that does not exist yet. This simulates what happens when a pipeline is updated before all its Task definitions are in place:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 cat > coolstuff-full-pipeline.yaml << 'EOF'
 apiVersion: tekton.dev/v1
@@ -191,7 +204,7 @@ EOF
 
 . Apply the Pipeline:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f coolstuff-full-pipeline.yaml
 ----
@@ -206,7 +219,7 @@ NOTE: OpenShift Pipelines does not validate Task references at pipeline creation
 
 . Create a PipelineRun against this pipeline:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 cat > coolstuff-run-fail.yaml << 'EOF'
 apiVersion: tekton.dev/v1
@@ -231,14 +244,14 @@ NOTE: This run uses `emptyDir` as the workspace backing. This is useful for shor
 
 . Apply the PipelineRun:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f coolstuff-run-fail.yaml
 ----
 
 . Watch the status update in real time:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get pipelinerun coolstuff-full-run-01 -w
 ----
@@ -258,7 +271,7 @@ Press `Ctrl+C` once the status shows `False`. Notice that the `build` task compl
 
 . List all PipelineRuns to confirm the failed status:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn pipelinerun list
 ----
@@ -276,7 +289,7 @@ coolstuff-pipeline-run-02    20 minutes ago   2m30s      Succeeded
 
 . Describe the failed PipelineRun to identify which task failed and why:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn pipelinerun describe coolstuff-full-run-01
 ----
@@ -301,7 +314,7 @@ Two things to note:
 
 . Get the detailed failure message from the failing TaskRun:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn pipelinerun describe coolstuff-full-run-01 \
   -o jsonpath='{.status.conditions[0].message}'
@@ -328,7 +341,7 @@ image::pipeline-graph-failed.png[OpenShift console pipeline graph showing the bu
 
 . Create the missing `deploy-coolstuff-app` Task:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 cat > deploy-coolstuff-task.yaml << 'EOF'
 apiVersion: tekton.dev/v1
@@ -360,7 +373,7 @@ EOF
 
 . Apply the Task:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f deploy-coolstuff-task.yaml
 ----
@@ -373,14 +386,14 @@ task.tekton.dev/deploy-coolstuff-app created
 
 . Confirm the Task now exists:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc get task deploy-coolstuff-app
 ----
 
 . Create a new PipelineRun to confirm the fix resolves the failure:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 cat > coolstuff-run-fixed.yaml << 'EOF'
 apiVersion: tekton.dev/v1
@@ -403,7 +416,7 @@ EOF
 
 . Apply the fixed PipelineRun and follow the logs:
 +
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 oc apply -f coolstuff-run-fixed.yaml && \
   tkn pipelinerun logs coolstuff-full-run-02 -f
@@ -433,7 +446,7 @@ Expected output:
 
 Confirm the fixed PipelineRun completed successfully:
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn pipelinerun list
 ----
@@ -448,7 +461,7 @@ coolstuff-pipeline-run-02    25 minutes ago   2m30s      Succeeded
 ...
 ----
 
-[source,bash]
+[source,sh,role="copypaste"]
 ----
 tkn pipelinerun describe coolstuff-full-run-02 \
   -o jsonpath='{.status.conditions[0].reason}'
