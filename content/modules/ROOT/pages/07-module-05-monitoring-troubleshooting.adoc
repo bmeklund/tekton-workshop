@@ -9,6 +9,8 @@ Coolstuff Store's pipeline is running. The 3-stage workflow -- clone, build, sum
 
 In this final module, you'll learn how to monitor pipeline runs using both the CLI and the OpenShift console, and you'll deliberately introduce a failure to practice the diagnostic workflow that Coolstuff Store's team will use in production.
 
+// TODO: Talk about the value of gitops - using console and manual yaml files in this ws but really good to store templates in git and use gitops for continuity and security
+
 toc::[]
 
 == Learning objectives
@@ -27,10 +29,14 @@ Tekton uses Kubernetes-style status conditions to communicate the state of every
 
 Key status fields:
 
-* **`SUCCEEDED`**: `True` means the run completed without errors. `False` means it failed. `Unknown` means it is still running.
-* **`REASON`**: A short code explaining the current state. Common values include `Succeeded`, `Failed`, `Running`, `CouldntGetTask`, `TaskRunImagePullFailed`, and `PipelineRunTimeout`.
-* **`CONDITIONS`**: A list of detailed condition objects. The `message` field in a condition contains the human-readable error description.
-* **`COMPLETIONTIME`**: Populated only when a run finishes. Comparing this to `STARTTIME` gives you the actual duration.
+* **SUCCEEDED**: 
+** `True` means the run completed without errors. `False` means it failed. `Unknown` means it is still running.
+* **REASON**: 
+** A short code explaining the current state. Common values include `Succeeded`, `Failed`, `Running`, `CouldntGetTask`, `TaskRunImagePullFailed`, and `PipelineRunTimeout`.
+* **CONDITIONS**: 
+** A list of detailed condition objects. The `message` field in a condition contains the human-readable error description.
+* **COMPLETIONTIME**: 
+** Populated only when a run finishes. Comparing this to `STARTTIME` gives you the actual duration.
 
 NOTE: When a Pipeline has multiple Tasks and 1 fails, Tekton cancels any remaining Tasks that depend on the failed one. Tasks that are independent (not in the `runAfter` chain of the failed Task) may still complete.
 --
@@ -47,7 +53,40 @@ The pipeline runs from Module 3 are still in the cluster. In this exercise, you'
 oc project tekton-workshop-%OPENSHIFT_USERNAME%
 ----
 
-. List all PipelineRuns in the project and check their status:
+. We will manually create a named PipelineRun and execute it, to make it easier to follow up in these excersises.
+
+.. Create the PipelineRun definition:
++
+[source,sh,role="copypaste"]
+----
+cat > coolstuff-pipelinerun-02.yaml << 'EOF'
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: coolstuff-pipeline-run-02
+spec:
+  pipelineRef:
+    name: coolstuff-build-pipeline
+  params:
+    - name: app-name
+      value: "coolstuff-store-frontend"
+    - name: app-version
+      value: "3.0.0"
+  workspaces:
+    - name: shared-data
+      persistentVolumeClaim:
+        claimName: workshop-pvc
+EOF
+----
+
+. Apply the PipelineRun:
++
+[source,sh,role="copypaste"]
+----
+oc apply -f coolstuff-pipelinerun-02.yaml
+----
++
+. Now list all PipelineRuns in the project and check their status:
 +
 [source,sh,role="copypaste"]
 ----
@@ -60,12 +99,12 @@ Expected output:
 NAME                              STARTED          DURATION   STATUS
 coolstuff-build-push-sje33k       5 minutes ago    48s        Succeeded
 coolstuff-build-pipeline-xnj10j   10 minutes ago   35s        Succeeded
-coolstuff-pipeline-run-02         20 minutes ago   2m30s      Succeeded
+coolstuff-pipeline-run-02         20 minutes ago   ---        Running
 coolstuff-pipeline-run-01         25 minutes ago   40s        Succeeded
 ...
 ----
 
-. Inspect the full status of `coolstuff-pipeline-run-02`. This shows which Task ran in which order and how long each took:
+. Wait until the PiplineRun has finished then inspect the full status of `coolstuff-pipeline-run-02`. This shows which Task ran in which order and how long each took:
 +
 [source,sh,role="copypaste"]
 ----
@@ -75,19 +114,18 @@ tkn pipelinerun describe coolstuff-pipeline-run-02
 Expected output includes:
 +
 ----
-Name:           coolstuff-pipeline-run-02
+Name:               coolstuff-pipeline-run-02
 ...
 🌡️ Status
 STARTED              DURATION   STATUS
 25 minutes ago       35s.       Succeeded
 ...
 TaskRuns
- NAME                                          TASK NAME      STARTED         DURATION   STATUS
- coolstuff-pipeline-run-02-fetch-source-...   fetch-source    10 minutes ago  1m55s      Succeeded
- coolstuff-pipeline-run-02-build-...          build           8 minutes ago   25s        Succeeded
- coolstuff-pipeline-run-02-summarize-...      summarize       7 minutes ago   10s        Succeeded
+ NAME                                     TASK NAME      STARTED          DURATION   STATUS
+ coolstuff-pipeline-run-02--summarize     summarize      9 minutes ago    6s         Succeeded
+ coolstuff-pipeline-run-02--build         build          9 minutes ago    10s        Succeeded
+ coolstuff-pipeline-run-02--git-clone     git-clone      10 minutes ago   30s        Succeeded
 ----
-
 . List the Kubernetes pods that were created by the PipelineRun. Each TaskRun creates 1 pod:
 +
 [source,sh,role="copypaste"]
@@ -98,10 +136,10 @@ oc get pods -l tekton.dev/pipelineRun=coolstuff-pipeline-run-02
 Expected output:
 +
 ----
-NAME                                                     READY   STATUS      RESTARTS   AGE
-coolstuff-pipeline-run-02-build-...                     0/1     Completed   0          8m
-coolstuff-pipeline-run-02-fetch-source-...              0/1     Completed   0          10m
-coolstuff-pipeline-run-02-summarize-...                 0/1     Completed   0          7m
+NAME                                            READY   STATUS      RESTARTS   AGE
+coolstuff-pipeline-run-02-build-pod             0/3     Completed   0          3m18s
+coolstuff-pipeline-run-02-git-clone-pod         0/1     Completed   0          3m33s
+coolstuff-pipeline-run-02-summarize-pod         0/1     Completed   0          3m8s
 ----
 +
 NOTE: Tekton pods show `Completed` (not `Running`) after a task finishes. This is expected behavior -- the pod is retained to allow log retrieval.
@@ -130,26 +168,43 @@ image::pipeline-run-detail-timing.png[OpenShift console PipelineRun detail view 
 
 === Verify
 
-Confirm you can retrieve task-level information from the CLI:
+* Confirm you can retrieve task-level information from the CLI:
 
 [source,sh,role="copypaste"]
 ----
 tkn pipelinerun describe coolstuff-pipeline-run-02 -o jsonpath='{range .status.childReferences[*]}{.pipelineTaskName}{"\n"}{end}'
 ----
+ 
+ All Tasks are listed from the pipeline.
+
+* Check status of each Task:
+
+[source,sh,role="copypaste"]
+----
+tkn taskrun list -o json | jq -r --arg pr "coolstuff-pipeline-run-02" '.items[] | select(.metadata.labels["tekton.dev/pipelineRun"] == $pr) | [(.metadata.labels["tekton.dev/pipelineTask"] // "-"),(.status.conditions[0].status // "-"),(.status.conditions[0].reason // "-")] | @tsv' | column -t
+----
+
+* Each task name is listed with its status reason
+* All tasks show `Succeeded`
+
+* You can also draw more details using tkn to get Tasks and it's steps:
 
 [source,sh,role="copypaste"]
 ----
 tkn taskrun list -o json | jq -r --arg pr "coolstuff-pipeline-run-02" '.items[] | select(.metadata.labels["tekton.dev/pipelineRun"] == $pr) | "Task: \(.metadata.labels["tekton.dev/pipelineTask"])  [\(.status.conditions[0].status) / \(.status.conditions[0].reason)]",(.status.steps[]? | "  step: \(.name)  → \(.terminated.reason // "Running")")'
 ----
 
-////
-TODO: Check result from this 
-tkn taskrun list -o json | jq -r --arg pr "coolstuff-pipeline-run-02" '.items[] | select(.metadata.labels["tekton.dev/pipelineRun"] == $pr) | [(.metadata.labels["tekton.dev/pipelineTask"] // "-"),(.status.conditions[0].status // "-"),(.status.conditions[0].reason // "-")] | @tsv' | column -t
-////
-
-* Each task name is listed with its status reason
-* All tasks show `Succeeded`
-* You can identify individual task durations from `tkn pipelinerun describe`
+Expected output:
+----
+Task: summarize  [True / Succeeded]
+  step: summarize  → Completed
+Task: build  [True / Succeeded]
+  step: validate  → Completed
+  step: test  → Completed
+  step: package  → Completed
+Task: git-clone  [True / Succeeded]
+  step: prepare-and-run  → Completed
+----
 
 [#exercise-2]
 == Exercise 2: Diagnose and fix a failing pipeline run
@@ -259,13 +314,11 @@ oc get pipelinerun coolstuff-full-run-01 -w
 Expected output:
 +
 ----
-NAME                    SUCCEEDED   REASON    STARTTIME   COMPLETIONTIME
-coolstuff-full-run-01   Unknown     Running   5s
-coolstuff-full-run-01   Unknown     Running   30s
-coolstuff-full-run-01   False       Failed    45s         46s
+NAME                    SUCCEEDED   REASON           STARTTIME   COMPLETIONTIME
+coolstuff-full-run-01   False       CouldntGetTask   22s         22s
 ----
 +
-Press `Ctrl+C` once the status shows `False`. Notice that the `build` task completes but the `deploy` task causes the pipeline to fail.
+Press `Ctrl+C` once the status shows `False`. Notice that the state is set to Succeeded False.
 
 === Diagnose the failure
 
@@ -297,20 +350,22 @@ tkn pipelinerun describe coolstuff-full-run-01
 Expected output includes:
 +
 ----
-TaskRuns
- NAME                                   TASK NAME   STARTED          DURATION   STATUS
- coolstuff-full-run-01-build-...        build       1 minute ago     25s        Succeeded
- coolstuff-full-run-01-deploy-...       deploy      55 seconds ago   5s         Failed
+...
+🌡️  Status
 
-Message
- Tasks Completed: 1 (Succeeded), 1 (Failed)
- Tasks Failed: deploy
+STARTED         DURATION   STATUS
+3 minutes ago   0s         Failed(CouldntGetTask)
+
+💌 Message
+
+Pipeline tekton-workshop-user1/coolstuff-full-pipeline can't be Run; it contains Tasks that don't exist: Couldn't retrieve Task "deploy-coolstuff-app": tasks.tekton.dev "deploy-coolstuff-app" not found
+...
 ----
 +
 Two things to note:
 
-* The `build` task completed with `Succeeded`
-* The `deploy` task shows `Failed`
+* Even though the `build` task exists it's set to `Failed`
+* The missing `deploy` task also of course shows `Failed`
 
 . Get the detailed failure message from the failing TaskRun:
 +
@@ -323,19 +378,17 @@ tkn pipelinerun describe coolstuff-full-run-01 \
 Expected output:
 +
 ----
-Tasks Completed: 1 (Succeeded), 1 (Failed);
-PipelineRun "coolstuff-full-run-01" failed to finish:
-TaskRun coolstuff-full-run-01-deploy-... has failed
-("step-unnamed-0" exited with code 1 (image: "..."):
-tasks.tekton.dev "deploy-coolstuff-app" not found)
+Pipeline tekton-workshop-user1/coolstuff-full-pipeline can't be Run; it contains Tasks that don't exist: 
+
+Couldn't retrieve Task "deploy-coolstuff-app": tasks.tekton.dev "deploy-coolstuff-app" not found
 ----
 +
 The message `tasks.tekton.dev "deploy-coolstuff-app" not found` is the root cause. The `deploy` stage referenced a Task that does not exist.
 
-. View the console failure view. In the **Developer** perspective, navigate to **Pipelines**, then `coolstuff-full-pipeline`, then `coolstuff-full-run-01`. The pipeline graph shows `build` in green and `deploy` in red.
+. View the console failure view. In the OpenShift console, navigate to **Pipelines**, then **PipelineRuns** and then click `coolstuff-full-pipelinerun-01`, then `coolstuff-full-run-01`. The pipeline graph shows `build` in green and `deploy` in red.
 
 // TODO: Add screenshot of the pipeline graph with build in green Succeeded and deploy in red Failed
-image::pipeline-graph-failed.png[OpenShift console pipeline graph showing the build task node in green Succeeded and the deploy task node in red Failed,link=self,window=blank,width=700,title="Pipeline graph with partial failure -- build succeeded, deploy failed"]
+image::pipeline-run-fail.png[OpenShift console pipeline graph showing the build task node and the deploy task node in red -Failed,link=self,window=blank,width=700,title="Pipeline graph with failure -- build and deploy failed"]
 
 === Fix the missing Task and re-run
 
@@ -464,7 +517,7 @@ coolstuff-pipeline-run-02    25 minutes ago   2m30s      Succeeded
 [source,sh,role="copypaste"]
 ----
 tkn pipelinerun describe coolstuff-full-run-02 \
-  -o jsonpath='{.status.conditions[0].reason}'
+  -o jsonpath='{.status.conditions[0].reason}'&& echo
 ----
 
 Expected output:

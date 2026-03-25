@@ -24,11 +24,19 @@ By the end of this module, you'll be able to:
 
 [sidebar]
 --
-A Pipeline is a collection of Tasks with defined execution order and shared inputs. Three concepts are key to understanding how Pipelines work:
+image::pipeline-icon.png[Pipelines icon,link=self,window=blank,width=100]
+
+A Pipeline is a collection of Tasks that are executed in a defined order and can share inputs. Tekton organizes these tasks into a directed acyclic graph (DAG), ensuring they run in the correct sequence based on their dependencies. In practice, this means Tekton creates and manages a set of Kubernetes pods, making sure each one runs to completion successfully.
+
+Tekton gives developers fine-grained control over execution. For example, it supports fan-in and fan-out patterns between tasks, allows automatic retries for unstable or flaky steps, and enables conditional execution so that tasks only run when specific criteria are met.
+
+Both Tasks and Pipelines are defined as custom resources within a Kubernetes cluster, making them fully declarative and Kubernetes-native.
+
+Three concepts are key to understanding how Pipelines work:
 
 * **`runAfter`**: Declares that a Task must wait for another to complete before it starts. This defines sequential ordering without coupling Tasks directly.
-* **Pipeline Parameters**: Defined at the Pipeline level and passed down to individual Tasks. This keeps TaskRuns simple, with one place to supply all values.
-* **Workspace mapping**: A Pipeline declares workspaces and maps them to each Task's workspace. All Tasks in a Pipeline can share the same underlying storage.
+* **`Pipeline Parameters`**: Defined at the Pipeline level and passed down to individual Tasks. This keeps TaskRuns simple, with one place to supply all values.
+* **`Workspace mapping`**: A Pipeline declares workspaces and maps them to each Task's workspace. All Tasks in a Pipeline can share the same underlying storage.
 
 NOTE: A PipelineRun is to a Pipeline what a TaskRun is to a Task. It supplies the runtime values (parameters, workspace bindings) and creates a record of the execution.
 --
