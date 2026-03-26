@@ -36,7 +36,7 @@ You will have access to and use:
 * The built in OpenShift console
 * A specific user on a shared cluster
 * A Gitea Git server for storing and working with code
-* A Terminal with the OpenShift CLi installed
+* A Terminal with the OpenShift CLI and the Tekton CLI installed
 
 NOTE: All credentials and environment details will be provided and displayed in the lab guide.
 

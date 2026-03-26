@@ -20,9 +20,10 @@ By the end of this module, you'll be able to:
 * Execute a Pipeline using a PipelineRun and monitor it through the visual pipeline graph
 * Extend a Pipeline by adding a Git source stage as the first step
 
-== Pipelines, Parameters, and Workspaces explained
+== Creating full Pipelines
 
 [sidebar]
+.Pipelines, Parameters, and Workspaces explained
 --
 image::pipeline-icon.png[Pipelines icon,link=self,window=blank,width=100]
 
@@ -113,7 +114,7 @@ task.tekton.dev/summarize-build created
 
 === Create the Pipeline
 
-. Create the `coolstuff-build-pipeline` Pipeline definition. It chains `build-coolstuff-app` followed by `summarize-build`, passing Parameters and the shared Workspace through both Tasks:
+. Create the `coolstuff-build-pipeline` pipeline definition. It chains `build-coolstuff-app` followed by `summarize-build`, passing Parameters and the shared Workspace through both Tasks:
 +
 [source,sh,role="copypaste"]
 ----
@@ -163,7 +164,7 @@ spec:
 EOF
 ----
 +
-NOTE: The workspace name in each task entry (`name: source`) is the name defined in the Task spec. The `workspace: shared-data` value is the Pipeline-level workspace name. These do not need to match -- this mapping is how the same Pipeline workspace reaches Tasks with different workspace names.
+NOTE: The workspace name in each task entry (`name: source`) is the name defined in the Task spec. The `workspace:shared-data` value is the Pipeline-level workspace name. These do not need to match -- this mapping is how the same Pipeline workspace reaches Tasks with different workspace names.
 
 . Apply the Pipeline:
 +
@@ -222,7 +223,7 @@ coolstuff-build-pipeline   17s
 ----
 * Pipeline name is `coolstuff-build-pipeline`
 
-Open the OpenShift console and view the pipeline in the Pipelines section. Click **Pipelines** then **Pipelines** again and in the center view click the **coolstuff-build-pipeline**
+Open the OpenShift console and view the pipeline in the Pipelines section. Fold out **Pipelines** then click **Pipelines** and in the center view click the `coolstuff-build-pipeline`
 
 The pipeline view shows a visual overview of the pipeline as well as more details about it. On the right hand side of the view we can see the two different Tasks we use in the pipeline as well as the workspace we use to store data between tasks.
 
@@ -303,7 +304,7 @@ Expected output:
 The log prefix format is `[task-name : step-name]`, which shows exactly which task and step produced each line.
 
 . While the PipelineRun is running (or after it completes), view the visual pipeline graph. 
-.. In the OpenShift console, fold out the **Pipelines** section, then click **Pipelines** again and then select the **PipelineRuns** tab before clicking on the `coolstuff-pipeline-run-01`. Here you can see the visual graph of the executed PiplineRun as well as the overall status: Succeeded.
+.. In the OpenShift console, fold out the **Pipelines** section, then click **Pipelines** again and then select the **PipelineRuns** tab before clicking on the `coolstuff-pipeline-run-01`. Here you can see the visual graph of the executed PiplineRun as well as the overall status: `Succeeded`.
 
 image::pipeline-graph-succeeded.png[OpenShift console showing the coolstuff-build-pipeline graph with build and summarize task nodes both showing green Succeeded status,link=self,window=blank,width=700,title="Pipeline graph showing end-to-end execution from build to summary"]
 
@@ -402,11 +403,12 @@ https://gitea-workshop-gitea.%APPS_HOSTNAME_SUFFIX%/%OPENSHIFT_USERNAME%/coolstu
 === Update the Pipeline to add a git clone task
 
 [sidebar]
+.OpenShift Pipelines Console
 --
 
 image::openshift-pipelines-logo.png[OpenShift Pipelines,link=self,window=blank,width=100]
 
-You have used OpenShift Pipelines in the web console previously to view the tekton resources you created via the CLi.
+You have used OpenShift Pipelines in the web console previously to view the tekton resources you created via the CLI.
 
 But the OpenShift Pipelines console can be used for more, it provides a graphical interface to create, manage, and visualize CI/CD pipelines
 
@@ -418,7 +420,7 @@ Key Features:
 * **Statistics & Metrics**: With the OpenShift Pipelines console plugin (requires OpenShift 4.15+ and Tekton Results), view execution statistics like success rate, duration, and pipeline run trends.
 * **Manual Approvals**: Tech preview support for approval steps in pipelines via ApprovalTask. 
 
-NOTE: Doing it manually in the console is a good way to learn about OpenShift Pipelines and it's capabilities. It's not something you do in a production or even test environment though. You can also do this manually using the CLi as before, or more commonly done - using GitOps and ArgoCD.  
+NOTE: Doing it manually in the console is a good way to learn about OpenShift Pipelines and it's capabilities. It's not something you do in a production or even test environment though. You can also do this manually using the CLI as before, or more commonly done - using GitOps and ArgoCD.  
 
 --
 
@@ -436,7 +438,7 @@ image::pipeline-edit.png[Edit pipeline in console,link=self,window=blank,width=7
 +
 image::pipeline-add-task-before.png[Add a task before build task,link=self,window=blank,width=700,title="Hover over task to add a new task before"]
 +
-. Click **Add Task** and start typing **git-clone**. Tasks will appear in a list below. Choose the _git-clone_ tagged with Red Hat. Then Click **Add**
+. Click **Add Task** and start typing `git-clone`. Tasks will appear in a list below. Choose the _git-clone_ tagged with Red Hat. Then Click **Add**
 +
 image::pipeline-add-git-clone.png[Add a git-clone task ,link=self,window=blank,width=700,title="Adding a git-clone task"]
 +
@@ -465,7 +467,7 @@ With the added task to clone a remote repository we will now kick off a new Pipe
 image::pipeline-run-start.png[Action - start PipelineRun from OpenShift console,link=self,window=blank,width=700]
 +
 . Start will open up a new window with parameters to configure for the PipelineRun. Leave the majority as defaults.
-.. But make sure to set *VolumeClaimTemplate* as the base for the _shared-data_ workspace.
+.. But make sure to set `VolumeClaimTemplate` as the base for the *shared-data* workspace.
 +
 image::pipeline-start-run.png[Start PipelineRun from with VolumeClaimTemplate,link=self,window=blank,width=700]
 +
@@ -476,13 +478,13 @@ image::pipeline-start-run.png[Start PipelineRun from with VolumeClaimTemplate,li
 +
 image::pipeline-run-running.png[PipelineRun executing ,link=self,window=blank,width=700]
 +
-. When all the tasks in the pipeline have executed without issues the overview will be updated showing the status of the PipelineRun > Succeeded.
+. When all the tasks in the pipeline have executed without issues the overview will be updated showing the status of the PipelineRun which should be: `Succeeded`.
 . If you have jumped out of the view you can find it again in the console under **Pipelines** → PiplineRuns → `coolstuff-pipeline-_random-id_` 
-.. Click the pipelineRun and verify its all green and marked as Succeeded.
+.. Click the pipelineRun and verify its all green and marked as `Succeeded`.
 +
 image::pipeline-run-verify.png[OpenShift console pipeline graph showing git-clone, build, and summarize task nodes in a linear sequence all with green Succeeded status,link=self,window=blank,width=700,title="3-stage pipeline from Git source to packaged artifact"]
 +
-. You can also check the status of the different Tasks in the PipelineRun using the OpenShift CLi
+. You can also check the status of the different Tasks in the PipelineRun using the OpenShift CLI
 +
 [source,sh,role="copypaste"]
 ----
@@ -500,7 +502,7 @@ coolstuff-build-pipeline-9p7bvy-git-clone-pod   0/1     Completed   0          3
 coolstuff-build-pipeline-9p7bvy-summarize-pod   0/1     Completed   0          35m
 ----
 +
-. Finally, check the full pipeline log in the terminal using tkn:
+. Finally, check the full pipeline log in the terminal using `tkn`:
 
 [source,sh,role="copypaste"]
 ----
@@ -593,7 +595,7 @@ Coolstuff Store's manager just watched a pipeline run end-to-end: clone source f
 * Created a `coolstuff-build-pipeline` Pipeline chaining 2 Tasks with `runAfter` ordering
 * Ran the Pipeline using a PipelineRun and monitored it through the visual pipeline graph
 * Added a `clone-source` Task that pulls real source code from the Gitea server
-* Extended the Pipeline to 3 stages: fetch-source, build, and summarize
+* Extended the Pipeline to 3 stages: `fetch-source, build`, and `summarize`
 
 **Key takeaways:**
 

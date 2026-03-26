@@ -23,10 +23,12 @@ By the end of this module, you'll be able to:
 * Trigger pipeline runs automatically by pushing to a Git branch
 * Use GitOps PR comments (`/retest`, `/cancel`) to control pipeline execution
 
-== How Pipelines as Code works
+== Setting up Pipeline-as-code
 
 [sidebar]
+.Pipelines as Code overview
 --
+
 image::pac-logo-with-tagline-small.png[Pipelines as code logo,link=self,window=blank,width=200]
 
 With a single pane of glass from your SCM provider (GitHub, GitLab, Bitbucket, or Gitea), pipeline runs are automatically triggered for Pull Requests and Push events.
@@ -108,8 +110,8 @@ image::gitea-settings-applications.png[Gitea settings,link=self,window=blank,wid
 . Under **Manage access tokens**, fill in:
 * **Token name**: `pac-token`
 * **Permissions**: 
-** Select **Issues: Read/Write** 
-** And **Repository: Read/Write**
+** Select `Issues: Read/Write` 
+** And `Repository: Read/Write`
 +
 . Click **Generate token** and copy the generated token immediately. It is shown only once.
 
@@ -227,8 +229,8 @@ image::gitea-add-webhook.png[Add webhook in Gitea,link=self,window=blank,width=7
 +
 * **Target URL**: `+https://pipelines-as-code-controller-openshift-pipelines.%APPS_HOSTNAME_SUFFIX%+`
 * **Secret**: paste the webhook secret value you generated (`$WEBHOOK_SECRET`)
-* **Trigger on**: select *Custom Events* 
-** Then mark **Push**, **Pull Request Comment** and **Pull Request**
+* **Trigger on**: select `Custom Events` 
+** Then mark `Push`, `Pull Request Comment` and `Pull Request`
 +
 . Click **Add webhook**.
 
@@ -255,9 +257,8 @@ With the Repository resource in place, PAC will watch your Gitea repository for 
 PAC automatically detects this file, reads its event annotations, and creates a PipelineRun whenever a matching Git event arrives.
 
 [sidebar]
+.Understanding the .tekton directory structure
 --
-
-Understanding the .tekton directory structure
 
 PAC reads pipeline definitions from the `.tekton/` directory at the root of your repository. Each YAML file in that directory can contain a `PipelineRun` or `TaskRun` resource with special annotations that control when it runs:
 
@@ -397,7 +398,7 @@ Expected output includes:
 . View the pipeline run in the OpenShift console. 
 . Navigate to **Pipelines**, then **PipelineRuns**. 
 .. The PAC-triggered run will be listed alongside the manually created runs from earlier modules:
- *coolstuff-build-push-RANDOM_ID.*
+ `coolstuff-build-push-RANDOM_ID.`
 +
 image::pac-triggered-pipelinerun.png[OpenShift console PipelineRuns list showing a PAC-triggered run with a commit SHA in the name alongside previous manually created runs,link=self,window=blank,width=700,title="PAC-triggered PipelineRun created automatically on Git push"]
 +
@@ -407,7 +408,7 @@ image::pac-triggered-run-details.png[OpenShift console PipelineRuns list showing
 
 === Verify
 
-List the different pipelineruns and look at status of the runs using the cli.
+List the different pipelineruns and look at status of the runs using the CLI.
 
 [source,sh,role="copypaste"]
 ----
@@ -470,7 +471,7 @@ One of the most useful features of Pipelines as Code is the ability to control p
 
 . Click **Add File** then **New file**.
 
-. Name the file **change.txt** and add a line in the file -- for example, add a line `## Module 4 update`.
+. Name the file `change.txt` and add a line in the file -- for example, add a line `## Module 4 update`.
 
 . Set the commit message to `Add module 4 update note`.
 
@@ -480,7 +481,7 @@ One of the most useful features of Pipelines as Code is the ability to control p
 +
 image::pac-new-file.png[Gitea new file added and committed,link=self,window=blank,width=700,title="New file committed, pull request waiting"]
 +
-. Click on new Pull Request to open a pull request to merge your change into the **main** branch.
+. Click on new Pull Request to open a pull request to merge your change into the `main` branch.
 .. On the pull request creation page, confirm the base branch is `main` and click **Create Pull Request**.
 +
 image::pac-pullrequest.png[Gitea create pull request,link=self,window=blank,width=700]
@@ -498,14 +499,16 @@ oc get pipelinerun
 
 === Add triggers on Pull Request events
 
-. To fix pipelineRuns on pull request we need to add a trigger to our pipelinerun file in the **.tekton** folder in Gitea.
+. To fix pipelineRuns on pull request we need to add a trigger to our pipelinerun file in the `.tekton` folder in Gitea.
 .. Let's take a look at the `.tekton/push-pipeline.yaml` file in Gitea. It contains annotations only includes `push` and `main` as a trigger events. 
 . We will now update the file to add pull request support as shown below.
 .. To add pull request triggering, edit `.tekton/push-pipeline.yaml` in Gitea and update the annotation:
 +
 [source,yaml]
 ----
+...
 pipelinesascode.tekton.dev/on-event: "[push, pull_request]"
+...
 ----
 +
 Commit this change to `main` 

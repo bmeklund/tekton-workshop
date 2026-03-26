@@ -20,21 +20,30 @@ By the end of this module, you'll be able to:
 * Configure a Workspace on a Task to share data between steps
 * Bind a Workspace to a PersistentVolumeClaim (PVC) in a TaskRun
 
-== Multi-step Tasks and Workspaces explained
+== Create more complex tasks
 
 [sidebar]
+.Multi-step Tasks and Workspaces explained
 --
+
 In Module 1, your Task had 1 step. Real CI/CD workflows need multiple steps that run in sequence, where each step builds on the previous one. For example:
 
 * Step 1 clones source code from a Git repository
+
 * Step 2 runs unit tests against that source code
+
 * Step 3 builds a container image and pushes it to a registry
 
-To share data between steps, Tekton uses **Workspaces**. A Workspace is a shared filesystem that all steps in a Task can read from and write to. Workspace storage types include:
+To share data between steps, and between Tasks, Tekton uses **Workspaces**. When a Task runs, it often needs access to files — source code, credentials, build artifacts, and so on. Workspaces are how Tasks request that storage without locking in the implementation details.
 
-* **PersistentVolumeClaim**: Durable storage, survives pod restarts. Recommended for build artifacts.
-* **emptyDir**: Ephemeral storage, wiped when the pod exits. Useful for temporary scratch space.
-* **ConfigMap or Secret**: Read-only data injected as files into the Task.
+A Task declares that it needs a workspace. The TaskRun decides how to provide it:
+
+* ** A ConfigMap or Secret (read-only)**: Read-only data injected as files into the Task.
+* ** Existing PersistentVolumeClaim**: Durable storage, survives pod restarts. Recommended for build artifacts. (useful for sharing data between Tasks)
+* **A new PersistentVolumeClaim** created from a **VolumeClaimTemplate**: Same as above.
+* **emptyDir**: Ephemeral storage, wiped when the pod exits. Useful for temporary scratch space - An emptyDir that lives only for the duration of the TaskRun
+
+This separation makes Tasks reusable — the same Task can work with a shared volume in one pipeline and a temporary directory in another.
 
 NOTE: A Workspace is declared on the Task definition. A TaskRun binds the Workspace to an actual storage backend, such as a PVC. This separation keeps Tasks reusable across environments with different storage configurations.
 --
@@ -176,7 +185,7 @@ build-coolstuff-app   26s
 * Task name is `build-coolstuff-app`
 * `tkn task describe` shows 3 steps, 2 params, 1 workspace
 
-Also check the new task in the OpenShift console in **Pipelines** then **Tasks**
+Also check the new task in the OpenShift console, like you did in Module 1 - Excersise 2. Check in **Pipelines** then **Tasks**
 
 [#exercise-2]
 == Exercise 2: Create a PVC and run the Task
@@ -306,7 +315,7 @@ The `-f` flag follows the log stream and returns to the prompt when the TaskRun 
 
 . View the TaskRun detail in the OpenShift console. 
 .. Navigate to **Pipelines**, then **Tasks**. In the central view Click **TaskRuns** to see the different executions of tasks. 
-.. Click **build-coolstuff-run-01** to see an overview with the Status=Succeeded, then click the Logs tab to see the log output from the task run.
+.. Click `build-coolstuff-run-01` to see an overview with the status `Succeeded`, then click the *Logs* tab to see the log output from the task run.
 
 image::taskrun-multistep-logs.png[OpenShift console TaskRun detail showing validate, test, and package steps with their log output,link=self,window=blank,width=700,title="Multi-step TaskRun with logs"]
 
@@ -419,12 +428,12 @@ hello-coolstuff-run-01    10 minutes ago  12s        Succeeded
 
 . View the TaskRuns list in the OpenShift console under **Pipelines**, then **Tasks**.
 
+image::taskrun-list-console.png[OpenShift console TaskRuns list showing build-coolstuff-run-01 and build-coolstuff-run-02 both with green Succeeded status badges,link=self,window=blank,width=700,title="TaskRuns list demonstrating Task reuse with different parameters"]
+
 [NOTE]
 ====
 Note that the two different TaskRuns use the same underlying Task.
 ====
-
-image::taskrun-list-console.png[OpenShift console TaskRuns list showing build-coolstuff-run-01 and build-coolstuff-run-02 both with green Succeeded status badges,link=self,window=blank,width=700,title="TaskRuns list demonstrating Task reuse with different parameters"]
 
 == Module summary
 
@@ -449,10 +458,6 @@ Coolstuff Store's manager can now see a recognizable CI/CD flow: validate, test,
 * Workspaces decouple storage configuration from Task definitions.
 * In Module 3, you'll chain Tasks like these into a Pipeline that orchestrates a full CI/CD workflow.
 
-**Next steps:**
-
-xref:05-module-03-building-pipelines.adoc[Module 3: Building your first pipeline] chains the Tasks you've written into an end-to-end Pipeline and runs it against Coolstuff Store's Gitea repository.
-
 == Learning outcomes
 
 By completing this module, you should now understand:
@@ -461,3 +466,8 @@ By completing this module, you should now understand:
 * The role of Parameters in making Tasks reusable without modifying the Task definition
 * How Workspaces decouple storage configuration from Task logic, allowing the same Task to run in different environments
 * The pattern of defining a Task once and executing it many times with different TaskRuns, which is the foundation of scalable CI/CD automation
+
+**Next steps:**
+
+xref:05-module-03-building-pipelines.adoc[Module 3: Building your first pipeline] chains the Tasks you've written into an end-to-end Pipeline and runs it against Coolstuff Store's Gitea repository.
+

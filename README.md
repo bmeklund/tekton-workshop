@@ -40,6 +40,21 @@ https://bmeklund.github.io/tekton-workshop/
 
 ## Workshop basics setup
 
+### Build and push the lab-guide container image to a repository
+
+The Containerfile builds a UBI9-based container with Apache httpd that serves the pre-built workshop site on port 8080. The container runs as a non-root user and is suitable for deployment on OpenShift.
+
+To build the site content first, run the Antora viewer as described above, which generates output in the www/ directory.
+
+Then use the *build-push-image.sh* script to build a multi-architecture image (amd64 and arm64) and push it to *Quay.io*:
+
+```sh
+export QUAY_USER=your-quay-username
+./build-push-container.sh
+```
+
+The script builds the image as **quay.io/$QUAY_USER/tekton-tutorial:latest** and pushes it to the registry.
+
 ### To install the needed components(operators and instances) run the below commands.
 
 #### As Cluster admin

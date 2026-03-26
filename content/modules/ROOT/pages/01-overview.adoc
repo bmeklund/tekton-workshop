@@ -99,3 +99,5 @@ Module 5 covers monitoring, log analysis, and troubleshooting pipeline failures 
 **"Is OpenShift Pipelines the same as Jenkins?"**
 
 Red Hat OpenShift Pipelines is built on Tekton, a Kubernetes-native CI/CD framework. Unlike Jenkins, Tekton runs each pipeline step as a Kubernetes pod, making it more portable and resource-efficient in container-based environments.
+
+Click on *Workshop details* below or in the menu to move on to the next section and to get access to your workshop environment.

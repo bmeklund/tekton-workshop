@@ -20,9 +20,10 @@ By the end of this module, you'll be able to:
 * Create a Tekton Task using a YAML definition and the `oc` CLI
 * Execute a Task using a TaskRun and verify the results using logs
 
-== Tekton and OpenShift Pipelines overview
+== Creating your first Tasks
 
 [sidebar]
+.Tekton and OpenShift Pipelines overview
 --
 image::tekton-logo.png[Tekton, 300]
 
@@ -44,18 +45,18 @@ The custom resources, or core building blocks, of Tekton and OpenShift Pipelines
 
 * **Step**: A step is an operation in a CI/CD workflow, such as running some unit tests for a Python web app, or the compilation of a Java program. Tekton performs each step with a container image you provide. For example, you may use the official Go image to compile a Go program in the same manner as you would on your local workstation (go build).
 * **Task** - a reusable unit of work, containing 1 or more Steps running in order performing a specific task. Tekton runs a task in the form of a Kubernetes pod, each Step runs inside a container image. Examples include cloning a Git repository, building a container image, or running tests.
-* **Pipeline** - A collection of Tasks that forms a CI/CD workflow. Pipelines can run Tasks sequentially or in parallel and pass data between them using Workspaces and Parameters. The Pipeline is the definition of the pipeline and the **Tasks** that it should perform.
+* **Pipeline** - A collection of Tasks that forms a CI/CD workflow. Pipelines can run Tasks sequentially or in parallel and pass data between them using Workspaces and Parameters. The Pipeline is the definition of the pipeline and the Tasks that it should perform.
 
 image::concept-tasks-pipelines.png[Diagram showing the relationship between Tekton Tasks, Pipelines, TaskRuns, and PipelineRuns,link=self,window=blank,width=700,title="Tekton component relationships"]
 
-* **TaskRun** - the result of a single execution of a **Task**. When you trigger a Task, Tekton creates a TaskRun resource that tracks the execution status and stores its output.
-* **PipelineRun** - A specific single execution of a Pipeline. A PipelineRun tracks the status of every Task in the Pipeline and stores the overall result.You can view the status of your CI/CD workflow, including the specifics of each task execution with pipelineRuns. A PipelineRun is th result of running an instance of **Pipeline**, which includes a number of **TaskRun**
+* **TaskRun** - the result of a single execution of a Task. When you trigger a Task, Tekton creates a TaskRun resource that tracks the execution status and stores its output.
+* **PipelineRun** - A specific single execution of a Pipeline. A PipelineRun tracks the status of every Task in the Pipeline and stores the overall result.You can view the status of your CI/CD workflow, including the specifics of each task execution with pipelineRuns. A PipelineRun is th result of running an instance of Pipeline, which includes a number of TaskRun
 
 image::tekton-architecture.png[Tekton Architecture, 600]
 
 Related to these components we also have the following types:
 
-* **PipelineResource** - inputs (e.g., git repository) and outputs (e.g., image registry) to and out of a **Pipeline** or **Task**
+* **PipelineResource** - inputs (e.g., git repository) and outputs (e.g., image registry) to and out of a Pipeline or Task.
 * **Triggers** - allows you to instantiate pipelines based on events. For example, you can trigger the instantiation and execution of a pipeline every time a PR is merged against a GitHub repository. You can also build a user interface that launches specific Tekton triggers.
 * **Workspaces** - Workspaces are similar to Volumes, they allow a Task to store inputs and/or outputs, share data between Tasks etc.
 * **...and more**
@@ -79,11 +80,11 @@ Coolstuff Store's OpenShift cluster has Red Hat OpenShift Pipelines {pipelines_v
 
 . This is the overview of details on the current OpenShift project you are in. It shows details on your workloads in it. At the moment it is empty but this we will change during the course of this workshop.
 
-. In the left navigation menu, click **Pipelines** and then **Pipelines** again. This menu confirms that OpenShift Pipelines is active in your cluster. The list is empty for now and **No Pipelines found** is shown in the main view. You'll populate it in the next exercises.
+. In the left navigation menu, click **Pipelines** and then **Pipelines** again. This menu confirms that OpenShift Pipelines is active in your cluster. The list is empty for now and `No Pipelines found` is shown in the main view. You'll populate it in the next exercises.
 
 . Navigate to **Ecosystem** and then **Installed Operators**.
 
-. Search for **OpenShift Pipelines** in the filter box. Confirm the operator shows a phase of **Succeeded**.
+. Search for `OpenShift Pipelines` in the filter box. Confirm the operator shows a phase of **Succeeded**.
 
 image::pipelines-operator-installed.png[OpenShift console showing the OpenShift Pipelines operator with Succeeded status in the Installed Operators list,link=self,window=blank,width=700,title="OpenShift Pipelines operator installed and ready"]
 
@@ -291,10 +292,6 @@ You've completed the Tekton fundamentals module. Coolstuff Store now has a verif
 * The OpenShift console provides a visual view of pipeline runs alongside the CLI.
 * Pipelines chain Tasks into a complete workflow. You'll build one in Module 3.
 
-**Next steps:**
-
-xref:04-module-02-creating-tasks.adoc[Module 2: Creating Tasks and TaskRuns] builds on this foundation by creating Tasks with Workspaces and Parameters that pass data between steps.
-
 == Learning outcomes
 
 By completing this module, you should now understand:
@@ -303,3 +300,7 @@ By completing this module, you should now understand:
 * The relationship between a Task and a TaskRun: the Task defines what to do, the TaskRun executes it
 * How to create and manage Tekton resources using the `oc` and `tkn` CLIs and the OpenShift console
 * Why cloud native CI/CD built on Kubernetes primitives provides better portability and consistency than manual deployment processes
+
+**Next steps:**
+
+xref:04-module-02-creating-tasks.adoc[Module 2: Creating Tasks and TaskRuns] builds on this foundation by creating Tasks with Workspaces and Parameters that pass data between steps.

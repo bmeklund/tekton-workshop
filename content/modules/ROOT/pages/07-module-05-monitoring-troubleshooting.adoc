@@ -162,7 +162,7 @@ oc get events --sort-by='.lastTimestamp' | tail -20
 
 . In the OpenShift console, navigate to **Pipelines**, then Click **Pipelines** and select `coolstuff-build-pipeline`. Click **PipelineRuns** to see a list of all runs with their status, duration, and start time.
 
-. Click `coolstuff-pipeline-run-02` to open the pipeline graph. Each node shows its status icon and duration. Hover over a node(e.g. _build_) to see its TaskRun name(_validate, test, package_) and timing details.
+. Click `coolstuff-pipeline-run-02` to open the pipeline graph. Each node shows its status icon and duration. Hover over a node(e.g. _build_) to see its TaskRun name(`validate, test, package`) and timing details.
 
 image::pipeline-run-detail-timing.png[OpenShift console PipelineRun detail view showing the 3-stage pipeline graph with duration overlays on each task node,link=self,window=blank,width=700,title="PipelineRun detail view with per-task timing"]
 
