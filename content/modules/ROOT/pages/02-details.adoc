@@ -45,9 +45,11 @@ Participants need access to:
 
 == Environment setup
 
-=== Pre-workshop checklist
+=== Workshop links and details
 
-Before starting, verify the following:
+The connection details for the environment you will use are as below, come back here if you need to revisit these details:
+
+The guide should provide the needed links timely, but if you need them you have them here too.
 
 * OpenShift console is accessible at:
 ** {openshift_console_url}[window=_blank]
@@ -62,19 +64,39 @@ Before starting, verify the following:
 * The web terminal is accessible and running:
 ** {openshift_console_url}terminal[window=_blank]
 
-=== Workshop setup
-. Before startin we need to log into the OpenShift web console to access our terminal
-.. Click the below link to open a Terminal via the OpenShift console:
-.. {openshift_console_url}terminal[window=_blank]
-.. You can log in with your user if needed:
+=== Pre Workshop setup
+
+Before startin we need to log into the OpenShift web console.
+
+NOTE: OpenShift ships with a web-based console that will allow users to perform various tasks via a browser.
+
+==== Log in to the OpenShift Developer Console
+
+`Click on the 'OpenShift Console' button below`
+
+[link={openshift_console_url}]
+[window=_blank, align="center"]
+[role='params-link']
+image::developer-console-button.png[Developer Workspace - Button, 300]
+
+. You can log in with your user if needed:
 .. Username: `{OPENSHIFT_USERNAME}`
 .. Password: `{OPENSHIFT_PASSWORD}`
+
+`Open the 'OpenShift Web Terminal' by clicking the button below`
+[link={openshift_console_url}/terminal]
+[window=_blank, align="center"]
+[role='params-link']
+image::developer-webterminal-button.png[Developer Workspace - Button, 300]
+
+. Log in with your user if needed:
+.. Username: `{OPENSHIFT_USERNAME}`
+.. Password: `{OPENSHIFT_PASSWORD}`
+
 . When logged in you might see this pop-up. Click on **Skip Tour**
 +
 image::ocp-skip-tour.png[OpenShift Tour Pop-up,link=self,window=blank,width=700]
 +
-[NOTE]
-====
 . If it's the first tine you start the Terminal you will need to initialize it. In the *Initialize Terminal* view enter the following:
 .. Project: Create Project
 .. Project Name: `tekton-workshop-%OPENSHIFT_USERNAME%`
@@ -82,7 +104,6 @@ image::ocp-skip-tour.png[OpenShift Tour Pop-up,link=self,window=blank,width=700]
 image::terminal-create-project.png[Initialize terminal,link=self,window=blank,width=700]
 +
 . Click on start and wait for the terminal to load.
-====
 
 . Keep the Terminal tab/window with the active terminal open during the whole workshop. You will work extensively in the terminal during the excersises.
 +
@@ -98,7 +119,8 @@ oc login https://api.%APPS_HOSTNAME_SUFFIX%:6443 -u %OPENSHIFT_USERNAME% -p %OPE
 ----
 
 If the terminal window stops responding overall(the terminal runs as a pod in your project) try to open a new instance using the link provided above
-Or open it from the terminal icon in the top right corner or the OpenShift console as shown below.
+
+Or open it from the terminal icon in the top right corner or the OpenShift console as shown below, and pop it out to a separate window.
 
 image::terminal-open-icon.png[OpenShift open terminal ,link=self,window=blank,width=400]
 

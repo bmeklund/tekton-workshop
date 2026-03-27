@@ -70,15 +70,55 @@ image::concept-runs.png[Diagram showing the relationship between Pipeline, Pipel
 
 Coolstuff Store's OpenShift cluster has Red Hat OpenShift Pipelines {pipelines_version} pre-installed. Your first task is to confirm the installation and get familiar with the Pipelines interface before you start building.
 
-. Open the OpenShift console in your browser. Click the link below to open the OpenShift console in a new tab:
-** {openshift_console_url}/k8s/cluster/projects/tekton-workshop-%OPENSHIFT_USERNAME%[window=_blank]
+[NOTE]
+====
 
-. If needed, log in with your credentials:
+You should already have logged in to the OpenShift Web Console, as well as have opened the OpenShift Web Terminal.
 
-* **Username**: `{OPENSHIFT_USERNAME}`
-* **Password**: `{OPENSHIFT_PASSWORD}`
+If you have done that, skip down to <<openshift-console>>. Otherwise follow the steps here:
 
-. This is the overview of details on the current OpenShift project you are in. It shows details on your workloads in it. At the moment it is empty but this we will change during the course of this workshop.
+* `Click on the 'OpenShift Console' button below`
++
+[link={openshift_console_url}]
+[window=_blank, align="center"]
+[role='params-link']
+image::developer-console-button.png[Developer Workspace - Button, 300]
++
+** You can log in with your user if needed:
+*** *Username*: `{OPENSHIFT_USERNAME}`
+*** *Password*: `{OPENSHIFT_PASSWORD}`
+* `Open the 'OpenShift Web Terminal' by clicking the button below`
++
+[link={openshift_console_url}/terminal]
+[window=_blank, align="center"]
+[role='params-link']
+image::developer-webterminal-button.png[Developer Workspace - Button, 300]
++
+** Log in with your user if needed:
+*** *Username*: `{OPENSHIFT_USERNAME}`
+*** *Password*: `{OPENSHIFT_PASSWORD}`
++
+* When logged in you might see this pop-up. Click on **Skip Tour**
++
+image::ocp-skip-tour.png[OpenShift Tour Pop-up,link=self,window=blank,width=700]
++
+* If it's the first tine you start the Terminal you will need to initialize it. In the *Initialize Terminal* view enter the following:
+** *Project*: `Create Project`
+** *Project Name*: `tekton-workshop-%OPENSHIFT_USERNAME%`
++
+image::terminal-create-project.png[Initialize terminal,link=self,window=blank,width=700]
++
+* Click on start and wait for the terminal to load.
+====
+
+[[openshift-console]]
+=== The OpenShift Web Console
+
+The Red Hat OpenShift Container Platform web console is a graphical user interface accessible via a web browser that allows developers and administrators to visualize, browse, and manage project contents, cluster inventory, and resources.
+
+The Web Console is governed by RBAC, meaning you can only view and interact with resources for which you have the appropriate permissions.
+
+. When first logged in you will see an overview. The overview lists details on the current OpenShift project you are in. It shows details on your workloads in it. At the moment it is empty but this we will change during the course of this workshop.
 
 . In the left navigation menu, click **Pipelines** and then **Pipelines** again. This menu confirms that OpenShift Pipelines is active in your cluster. The list is empty for now and `No Pipelines found` is shown in the main view. You'll populate it in the next exercises.
 
