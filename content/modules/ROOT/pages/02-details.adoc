@@ -43,7 +43,7 @@ Participants need access to:
 * Internet connectivity is required for this lab, the OpenShift environment used is cloud hosted
 * All required images and resources are pre-deployed in your lab environment
 
-== Environment setup
+== Environment details and setup
 
 === Workshop links and details
 
@@ -66,11 +66,11 @@ The guide should provide the needed links timely, but if you need them you have 
 
 === Pre Workshop setup
 
-Before startin we need to log into the OpenShift web console.
+Before starting we need to log into the OpenShift web console and prepare it for the workshop.
 
 NOTE: OpenShift ships with a web-based console that will allow users to perform various tasks via a browser.
 
-==== Log in to the OpenShift Developer Console
+==== Log in to the OpenShift Web Console
 
 `Click on the 'OpenShift Console' button below`
 

@@ -133,6 +133,8 @@ image::pipelines-operator-installed.png[OpenShift console showing the OpenShift 
 
 Now that OpenShift Pipelines is confirmed, you'll create your first Tekton Task. This Task prints a custom message to demonstrate the structure of a Task definition. Building simple Tasks first gives you a foundation before you write more complex ones in Module 2.
 
+We will start with using the Web Terminal, so switch to the terminal window.
+
 === Verify you are still logged in on OpenShift
 [source,sh,role="copypaste"]
 ----
