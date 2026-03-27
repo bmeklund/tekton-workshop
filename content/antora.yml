@@ -20,6 +20,8 @@ asciidoc:
     page-links:
     - url: https://redhat.com
       text: Red Hat
+    - url: https://developers.redhat.com
+      text: Red Hat Developer   
 
 antora:
   extensions:
