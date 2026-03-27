@@ -30,6 +30,8 @@ ui:
   supplemental_files:
     - path: ./content/supplemental-ui
     - path: ./content/lib
+    - path: img/favicon.ico
+      src: ./content/supplemental-ui/img/favicon.ico
     - path: .nojekyll
     - path: ui.yml
       contents: "static_files: [ .nojekyll ]"
