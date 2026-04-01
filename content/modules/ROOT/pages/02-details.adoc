@@ -84,7 +84,7 @@ image::developer-console-button.png[Developer Workspace - Button, 300]
 .. Password: `{OPENSHIFT_PASSWORD}`
 
 `Open the 'OpenShift Web Terminal' by clicking the button below`
-[link={openshift_console_url}/terminal]
+[link={openshift_console_url}terminal]
 [window=_blank, align="center"]
 [role='params-link']
 image::developer-webterminal-button.png[Developer Workspace - Button, 300]

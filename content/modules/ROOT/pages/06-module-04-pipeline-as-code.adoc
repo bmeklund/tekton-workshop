@@ -103,7 +103,7 @@ image::gitea-sign-in.png[Gitea start page,link=self,window=blank,width=700,title
 +
 . Click your profile avatar in the top right corner, then select **Settings**.
 
-. In the top menubar, click **Applications**.
+. In the left side menu, click **Applications**.
 +
 image::gitea-settings-applications.png[Gitea settings,link=self,window=blank,width=700,title="Gitea's settings page"]
 +
@@ -113,9 +113,16 @@ image::gitea-settings-applications.png[Gitea settings,link=self,window=blank,wid
 ** Select `Issues: Read/Write` 
 ** And `Repository: Read/Write`
 +
-. Click **Generate token** and copy the generated token immediately. It is shown only once.
+. Click **Generate token** this will generate a token and show it in a new view.
+
+[WARNING]
+====
+The generated token is only shown once - DO NOT close or leave the token view yet. We will return here soon and copy the value.
+====
 
 === Create the webhook secret and Kubernetes Secret
+
+We will now start to set up our tokens in OpenShift.
 
 . In the terminal, generate a random webhook secret:
 +
@@ -238,16 +245,17 @@ image::gitea-add-webhook.png[Add webhook in Gitea,link=self,window=blank,width=7
 +
 image::gitea-webhook-added.png[Added webhook in Gitea,link=self,window=blank,width=700]
 +
-. Click on the pencil on the newly created webhook
-. Click **Test delivery** to confirm Gitea can reach the PAC controller. 
-.. A `202` response confirms the connection is working.
-+
-image::gitea-verify-testdelivery.png[Gitea webhook settings page showing the PAC controller URL filled in and a successful 200 test delivery response,link=self,window=blank,width=700,title="Gitea webhook configured to send events to Pipelines as Code"]
-+
+. Click on the pencil on the newly created webhook then scroll to the bottom of the page.
+. Click **Test Push Event** to confirm Gitea can reach the PAC controller. 
 . Verify at the bottom of the screen that all looks good(green checkmark on the webhook). 
 .. Click the randomly generated string to fold the Request/Response details up.
 +
 image::gitea-webhook-verify.png[Webhook verification in Gitea,link=self,window=blank,width=700]
++
+. A `202` response confirms the connection is working.
++
+image::gitea-verify-testdelivery.png[Gitea webhook settings page showing the PAC controller URL filled in and a successful 200 test delivery response,link=self,window=blank,width=700,title="Gitea webhook configured to send events to Pipelines as Code"]
++
 
 [#exercise-2]
 == Exercise 2: Add a PipelineRun template to the repository
@@ -355,7 +363,7 @@ NOTE: The `{{ revision }}` placeholder is replaced by PAC with the actual commit
 +
 NOTE: This template, like the pipelines before uses `VolumeClaimTemplate` as the workspace backing to store data between tasks.
 
-. Scroll down to the bottom of the page andSet the commit message to `Add PAC pipeline definition`
+. Scroll down to the bottom of the page and set the commit message to `Add PAC pipeline definition`
 . Click **Commit changes** to commit directly to `main`.
 
 === Watch the pipeline trigger automatically
@@ -502,7 +510,7 @@ oc get pipelinerun
 . To fix pipelineRuns on pull request we need to add a trigger to our pipelinerun file in the `.tekton` folder in Gitea.
 .. Let's take a look at the `.tekton/push-pipeline.yaml` file in Gitea. It contains annotations only includes `push` and `main` as a trigger events. 
 . We will now update the file to add pull request support as shown below.
-.. To add pull request triggering, edit `.tekton/push-pipeline.yaml` in Gitea and update the annotation:
+.. To add pull request triggering, edit `.tekton/push-pipeline.yaml` (click on the pencil icon to the right - Edit file) in Gitea and update the annotation:
 +
 [source,yaml]
 ----
@@ -537,24 +545,26 @@ Once a pipeline run has completed for the pull request, you can control re-execu
 +
 image::pac-reopen-pullrequest.png[Gitea open pull request,link=self,window=blank,width=700]
 +
-. Click **Comment** and type `/retest` in the comment body and submit.
+. Click **Comment** and type `/test` in the comment body and submit.
 +
 
 PAC detects the comment from an authorized user and triggers a new PipelineRun for the same commit. This is useful when you want to retry a CI run without pushing new code -- for example, after a transient infrastructure failure.
-
-. Watch the new run appear:
+. In the pipelines console for the actual run you can see the Event type for this new run:
+.. Event type: `test-all-comment`
+. Watch the new run appear in the terminal:
 +
 [source,sh,role="copypaste"]
 ----
 tkn pipelinerun list | head -5
 ----
 
-. To cancel a running PipelineRun, post a `/cancel` comment in the pull request while a run is in progress. PAC cancels all matching running PipelineRuns for that commit.
+. To cancel a running PipelineRun, post a `/cancel` comment in the pull request while a run is in progress(if no pipeline is running first start one with a /test comment on the PR). 
+.. PAC cancels all matching running PipelineRuns for that commit.
 
 Available GitOps commands, as documented in the link:https://pipelinesascode.com/docs/guide/gitops_commands/[Pipelines as Code GitOps commands reference^]:
 
-* `/retest` -- Re-runs all failed PipelineRuns for the current commit
-* `/test` -- Runs all matching PipelineRuns regardless of current status
+* `/retest` -- Re-runs all *failed PipelineRuns* for the current commit
+* `/test` -- Runs all matching PipelineRuns *regardless of current status*
 * `/retest <pipelinerun-name>` -- Re-runs a specific PipelineRun by name
 * `/cancel` -- Cancels all running PipelineRuns for the current commit
 * `/ok-to-test` -- Allows repository owners to approve pipeline runs for pull requests from external contributors who are not already authorized
@@ -614,7 +624,7 @@ Coolstuff Store's team can now push code and see their pipeline run automaticall
 * Configured a Gitea webhook to send push and pull request events to the PAC controller
 * Stored a PipelineRun template in the `.tekton/` directory with event annotations
 * Triggered an automatic pipeline run by pushing a commit to Gitea
-* Used `/retest` in a pull request comment to re-trigger a run without pushing new code
+* Used `/test` in a pull request comment to re-trigger a run without pushing new code
 
 **Key takeaways:**
 
@@ -622,7 +632,7 @@ Coolstuff Store's team can now push code and see their pipeline run automaticall
 * The `Repository` CRD is the link between a Git repository and an OpenShift namespace. 1 Repository per Git repository.
 * Annotations on the PipelineRun template control which Git events trigger the run and which branches are included.
 * PAC injects dynamic variables like `{{ revision }}` and `{{ source_branch }}` at runtime, removing the need to hardcode commit references.
-* GitOps commands (`/retest`, `/cancel`) give developers pipeline control without cluster access.
+* GitOps commands (`/test`, `/retest`, `/cancel`) give developers pipeline control without cluster access.
 
 == Learning outcomes
 
