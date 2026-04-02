@@ -176,7 +176,7 @@ Confirm the Task is present and has the correct structure:
 oc get task build-coolstuff-app
 ----
 
-Expected output
+Expected output:
 ----
 NAME                  AGE
 build-coolstuff-app   26s
@@ -185,7 +185,7 @@ build-coolstuff-app   26s
 * Task name is `build-coolstuff-app`
 * `tkn task describe` shows 3 steps, 2 params, 1 workspace
 
-Also check the new task in the OpenShift console, like you did in Module 1 - Excersise 2. Check in **Pipelines** then **Tasks**
+Also check the new task in the OpenShift console, like you did in Module 1 - Exercise 2. Check in **Pipelines** then **Tasks**
 
 [#exercise-2]
 == Exercise 2: Create a PVC and run the Task

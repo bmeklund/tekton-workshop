@@ -50,13 +50,12 @@ The custom resources, or core building blocks, of Tekton and OpenShift Pipelines
 image::concept-tasks-pipelines.png[Diagram showing the relationship between Tekton Tasks, Pipelines, TaskRuns, and PipelineRuns,link=self,window=blank,width=700,title="Tekton component relationships"]
 
 * **TaskRun** - the result of a single execution of a Task. When you trigger a Task, Tekton creates a TaskRun resource that tracks the execution status and stores its output.
-* **PipelineRun** - A specific single execution of a Pipeline. A PipelineRun tracks the status of every Task in the Pipeline and stores the overall result.You can view the status of your CI/CD workflow, including the specifics of each task execution with pipelineRuns. A PipelineRun is th result of running an instance of Pipeline, which includes a number of TaskRun
+* **PipelineRun** - A specific single execution of a Pipeline. A PipelineRun tracks the status of every Task in the Pipeline and stores the overall result. You can view the status of your CI/CD workflow, including the specifics of each task execution with pipelineRuns. A PipelineRun is the result of running an instance of Pipeline, which includes a number of TaskRun
 
-image::tekton-architecture.png[Tekton Architecture, 600]
+image::tekton-architecture.png[Tekton architecture diagram showing how the Tekton controller watches for TaskRun and PipelineRun resources and schedules pods, 600]
 
 Related to these components we also have the following types:
 
-* **PipelineResource** - inputs (e.g., git repository) and outputs (e.g., image registry) to and out of a Pipeline or Task.
 * **Triggers** - allows you to instantiate pipelines based on events. For example, you can trigger the instantiation and execution of a pipeline every time a PR is merged against a GitHub repository. You can also build a user interface that launches specific Tekton triggers.
 * **Workspaces** - Workspaces are similar to Volumes, they allow a Task to store inputs and/or outputs, share data between Tasks etc.
 * **...and more**
@@ -82,7 +81,7 @@ If you have done that, skip down to <<openshift-console>>. Otherwise follow the 
 [link={openshift_console_url}]
 [window=_blank, align="center"]
 [role='params-link']
-image::developer-console-button.png[Developer Workspace - Button, 300]
+image::developer-console-button.png[OpenShift console button to open the web console,300]
 +
 ** You can log in with your user if needed:
 *** *Username*: `{OPENSHIFT_USERNAME}`
@@ -92,7 +91,7 @@ image::developer-console-button.png[Developer Workspace - Button, 300]
 [link={openshift_console_url}/terminal]
 [window=_blank, align="center"]
 [role='params-link']
-image::developer-webterminal-button.png[Developer Workspace - Button, 300]
+image::developer-webterminal-button.png[OpenShift console button to open the web terminal,300]
 +
 ** Log in with your user if needed:
 *** *Username*: `{OPENSHIFT_USERNAME}`
@@ -102,7 +101,7 @@ image::developer-webterminal-button.png[Developer Workspace - Button, 300]
 +
 image::ocp-skip-tour.png[OpenShift Tour Pop-up,link=self,window=blank,width=700]
 +
-* If it's the first tine you start the Terminal you will need to initialize it. In the *Initialize Terminal* view enter the following:
+* If it's the first time you start the Terminal you will need to initialize it. In the *Initialize Terminal* view enter the following:
 ** *Project*: `Create Project`
 ** *Project Name*: `tekton-workshop-%OPENSHIFT_USERNAME%`
 +
@@ -141,7 +140,7 @@ We will start with using the Web Terminal, so switch to the terminal window.
 oc whoami
 ----
 
-Expected output
+Expected output:
 ----
 %OPENSHIFT_USERNAME%
 ----

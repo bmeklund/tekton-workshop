@@ -22,7 +22,7 @@ By the end of this workshop, you'll have practical Red Hat OpenShift Pipelines s
 * Understand Tekton concepts and architecture -- explain how Tasks, Pipelines, and PipelineRuns work together
 * Create and run custom Tasks and Pipelines -- reduce manual deployment steps with reusable automation
 * Integrate Git repositories into pipelines -- trigger automated builds from code changes
-* Try out and work with pipelines as code -- storing and triggering flows from a git repo
+* Try out and work with Pipelines As Code -- storing and triggering flows from a git repo
 * Monitor and troubleshoot pipeline executions -- identify and resolve failures faster
 
 **Technical outcome**: A working CI/CD pipeline that builds and deploys an application from a Git repository on OpenShift.
@@ -90,7 +90,7 @@ Yes. Module 3 covers Git integration using the Gitea server in your lab environm
 
 **"Can Pipelines be stored in Git?"**
 
-Yes, in multiple ways. As templates to be shared by multiple team. And module 4 covers Pipelines-as-code, by storing pipelines in Git with your application code you get a tight integration between pipeline and application. By storing pipelines in git you will get added value like versioning, review capabilities and collaboration around your pipelines too - bringing the full power of the Git workflow to your CI/CD pipelines
+Yes, in multiple ways. Pipeline templates can be shared by multiple teams. Module 4 covers Pipelines As Code which is another way to store pipelines in Git. By storing pipelines in Git with your application code you get a tight integration between pipeline and application. By storing pipelines in git you will get added value like versioning, review capabilities and collaboration around your pipelines too - bringing the full power of the Git workflow to your CI/CD pipelines
 
 **"What happens when a pipeline fails?"**
 

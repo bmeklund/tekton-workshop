@@ -75,9 +75,9 @@ openshiftpipelinesascodes         opac,pac    operator.tekton.dev/v1alpha1      
 repositories                      repo        pipelinesascode.tekton.dev/v1alpha1 true         Repository
 ----
 +
-. The PAC controller's public route URL is needed for this excersise, Gitea will use this to send webhook events to OpenShift:
+. The PAC controller's public route URL is needed for this exercise, Gitea will use this to send webhook events to OpenShift:
 +
-[source, sh,role="copypaste"]
+[source, none,role="copypaste"]
 https://pipelines-as-code-controller-openshift-pipelines.%APPS_HOSTNAME_SUFFIX%
 +
 Copy this URL. You will need it when configuring the webhook in Gitea.
@@ -427,7 +427,7 @@ Look at more details for the pac-run using the terminal:
 
 [source,sh,role="copypaste"]
 ----
-oc get pipelinerun coolstuff-build-push-lvkbs -o jsonpath='{.metadata.annotations}' | jq
+oc get pipelinerun coolstuff-build-push-CHANGE_ME -o jsonpath='{.metadata.annotations}' | jq
 ----
 
 Expected output:
@@ -527,7 +527,7 @@ Commit this change to `main`
 ----
 oc get pipelinerun -w
 ----
-. When the run has completed, edit the `change.txt` file by clickin on the file in the repository and then cliciking on the pencil icon on the right side.
+. When the run has completed, edit the `change.txt` file by clicking on the file in the repository and then clicking on the pencil icon on the right side.
 .. Add a new line below the first and then scroll down to the bottom and choose **Create a new branch for this commit and start a pull request**
 .. Name the branch `feature/module4-newedit` then click on *Propose file change*
 . Click on *New Pull Request* then Click on *Create Pull request*. This will now trigger a pipelineRun in OpenShift.
@@ -558,7 +558,7 @@ PAC detects the comment from an authorized user and triggers a new PipelineRun f
 tkn pipelinerun list | head -5
 ----
 
-. To cancel a running PipelineRun, post a `/cancel` comment in the pull request while a run is in progress(if no pipeline is running first start one with a /test comment on the PR). 
+. To cancel a running PipelineRun, post a `/cancel` comment in the pull request while a run is in progress (if no pipeline is running first start one with a /test comment on the PR). 
 .. PAC cancels all matching running PipelineRuns for that commit.
 
 Available GitOps commands, as documented in the link:https://pipelinesascode.com/docs/guide/gitops_commands/[Pipelines as Code GitOps commands reference^]:

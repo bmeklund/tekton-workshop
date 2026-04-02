@@ -2,7 +2,7 @@
 
 include::partial$_attributes.adoc[]
 
-`Congratulations!` 
+*Congratulations!*
 
 You have completed the Building Pipelines using Tekton on OpenShift workshop.
 
@@ -49,7 +49,7 @@ Talk to your instructors if you want to explore further topics like:
 
 Build on what you've learned with these related areas:
 
-* **Container image builds with Buildah** -- Extend your pipeline with a build stage that uses the Buildah ClusterTask (or link:https://hub.tekton.dev/tekton/task/buildah[Tekton Hub `buildah` Task^]) to build and push a container image to a registry.
+* **Container image builds with Buildah** -- Extend your pipeline with a build stage that uses the Buildah Task (or link:https://hub.tekton.dev/tekton/task/buildah[Tekton Hub `buildah` Task^]) to build and push a container image to a registry.
 * **OpenShift Pipelines Triggers** -- Before Pipelines as Code, Tekton Triggers handled webhook-to-PipelineRun conversion. Understanding Triggers helps when reading existing cluster configurations and when PAC is not available.
 
 === Practice projects
@@ -80,13 +80,13 @@ All references used across this workshop, organized by category.
 === Tekton upstream documentation
 
 * link:https://tekton.dev/docs/[Tekton documentation^] -- Upstream project documentation covering core concepts: Tasks, Pipelines, TaskRuns, PipelineRuns, Workspaces, and Parameters. Used in: Modules 1, 2.
-* link:https://tekton.dev/docs/operator/openshiftpipelinesascode/[OpenShift Pipelines as Code operator documentation^] -- Configuration reference for the `OpenShiftPipelinesAsCode` custom resource and PAC controller settings. Used in: Module 5.
+* link:https://tekton.dev/docs/operator/openshiftpipelinesascode/[OpenShift Pipelines as Code operator documentation^] -- Configuration reference for the `OpenShiftPipelinesAsCode` custom resource and PAC controller settings. Used in: Module 4.
 * link:https://tekton.dev/[Tekton project home^] -- Overview of the Tekton ecosystem: Pipelines, Triggers, Chains, Dashboard, and Hub. Used in: Module 1.
 
 === Pipelines as Code
 
-* link:https://pipelinesascode.com/[Pipelines as Code project^] -- Official documentation for Pipelines as Code: getting started, Repository CRD, `.tekton/` authoring, supported Git providers, and configuration. Used in: Module 5.
-* link:https://pipelinesascode.com/docs/guide/gitops_commands/[Pipelines as Code GitOps commands reference^] -- Full reference for `/retest`, `/test`, `/cancel`, and `/ok-to-test` PR comment commands including syntax, permissions, and advanced options. Used in: Module 5.
+* link:https://pipelinesascode.com/[Pipelines as Code project^] -- Official documentation for Pipelines as Code: getting started, Repository CRD, `.tekton/` authoring, supported Git providers, and configuration. Used in: Module 4.
+* link:https://pipelinesascode.com/docs/guide/gitops_commands/[Pipelines as Code GitOps commands reference^] -- Full reference for `/retest`, `/test`, `/cancel`, and `/ok-to-test` PR comment commands including syntax, permissions, and advanced options. Used in: Module 4.
 
 === Red Hat Developer resources
 

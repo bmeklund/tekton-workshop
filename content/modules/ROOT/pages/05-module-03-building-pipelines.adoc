@@ -45,7 +45,7 @@ NOTE: A PipelineRun is to a Pipeline what a TaskRun is to a Task. It supplies th
 [#exercise-1]
 == Exercise 1: Create your first Pipeline
 
-You'll create a Pipeline that chains 2 Tasks: the `build-coolstuff-app` Task from Module 2 and a new `summarize-build` Task that reports the build result. This gives you a complete build and report workflow in a single Pipeline.
+You'll create a Pipeline that chains two Tasks: the `build-coolstuff-app` Task from Module 2 and a new `summarize-build` Task that reports the build result. This gives you a complete build and report workflow in a single Pipeline.
 
 === Create the summarize-build Task
 
@@ -164,7 +164,7 @@ spec:
 EOF
 ----
 +
-NOTE: The workspace name in each task entry (`name: source`) is the name defined in the Task spec. The `workspace:shared-data` value is the Pipeline-level workspace name. These do not need to match -- this mapping is how the same Pipeline workspace reaches Tasks with different workspace names.
+NOTE: The workspace name in each task entry (`name: source`) is the name defined in the Task spec. The `workspace: shared-data` value is the Pipeline-level workspace name. These do not need to match -- this mapping is how the same Pipeline workspace reaches Tasks with different workspace names.
 
 . Apply the Pipeline:
 +
@@ -206,7 +206,7 @@ Tasks
  summarize  summarize-build      build
 ----
 
-* `tkn pipeline describe` shows 2 tasks with correct `runAfter` ordering
+* `tkn pipeline describe` shows two tasks with correct `runAfter` ordering
 
 === Verify
 
@@ -304,7 +304,7 @@ Expected output:
 The log prefix format is `[task-name : step-name]`, which shows exactly which task and step produced each line.
 
 . While the PipelineRun is running (or after it completes), view the visual pipeline graph. 
-.. In the OpenShift console, fold out the **Pipelines** section, then click **Pipelines** again and then select the **PipelineRuns** tab before clicking on the `coolstuff-pipeline-run-01`. Here you can see the visual graph of the executed PiplineRun as well as the overall status: `Succeeded`.
+.. In the OpenShift console, fold out the **Pipelines** section, then click **Pipelines** again and then select the **PipelineRuns** tab before clicking on the `coolstuff-pipeline-run-01`. Here you can see the visual graph of the executed PipelineRun as well as the overall status: `Succeeded`.
 
 image::pipeline-graph-succeeded.png[OpenShift console showing the coolstuff-build-pipeline graph with build and summarize task nodes both showing green Succeeded status,link=self,window=blank,width=700,title="Pipeline graph showing end-to-end execution from build to summary"]
 
@@ -388,14 +388,14 @@ image::gitea-create-repo.png[Create new repo in gitea ui,link=self,window=blank,
 
 . Click **Create repository**.
 
-. You will now see your initilized repository with a basic readme file looking like the below picture. If you click **Code** you can note the repository clone URL displayed.
+. You will now see your initialized repository with a basic readme file looking like the below picture. If you click **Code** you can note the repository clone URL displayed.
 +
 image::gitea-clone-repo.png[Center view of the created repository and button to clone Gitea the code,link=self,window=blank,width=700,title="Gitea center view of created repository with button to clone code"]
 +
 
 . The clone URL will look like this if you named it correctly.
 
-[source,none"]
+[source,none]
 ----
 https://gitea-workshop-gitea.%APPS_HOSTNAME_SUFFIX%/%OPENSHIFT_USERNAME%/coolstuff-app.git
 ----
@@ -448,13 +448,13 @@ NOTE: The git-clone task we use here is a default task provided by the OpenShift
 +
 [cols="1,1", options="header"]
 |===
-| Parameter Value | Display Name
+| Field | Value
 | Display name  | git-clone
 | URL | \https://gitea-workshop-gitea.%APPS_HOSTNAME_SUFFIX%/{OPENSHIFT_USERNAME}/coolstuff-app.git
 | output | shared-data
 |===
 +
-. Click on *Save* to save the configuration. Verify that the red exclamation mark i gone and the git-clone task is looking good.
+. Click on *Save* to save the configuration. Verify that the red exclamation mark is gone and the git-clone task is looking good.
 
 image::pipeline-save.png[Save git-clone task ,link=self,window=blank,width=700,title="Saving changes to git-clone"]
 
@@ -479,21 +479,20 @@ image::pipeline-start-run.png[Start PipelineRun from with VolumeClaimTemplate,li
 image::pipeline-run-running.png[PipelineRun executing ,link=self,window=blank,width=700]
 +
 . When all the tasks in the pipeline have executed without issues the overview will be updated showing the status of the PipelineRun which should be: `Succeeded`.
-. If you have jumped out of the view you can find it again in the console under **Pipelines** → PiplineRuns → `coolstuff-pipeline-_random-id_` 
+. If you have jumped out of the view you can find it again in the console under **Pipelines** → PipelineRuns → `coolstuff-pipeline-_random-id_` 
 .. Click the pipelineRun and verify its all green and marked as `Succeeded`.
 +
 image::pipeline-run-verify.png[OpenShift console pipeline graph showing git-clone, build, and summarize task nodes in a linear sequence all with green Succeeded status,link=self,window=blank,width=700,title="3-stage pipeline from Git source to packaged artifact"]
 +
 . You can also check the status of the different Tasks in the PipelineRun using the OpenShift CLI
 +
+NOTE: You will have to check what the random id appended on your pipelinerun-instance is and adjust the above command with your id instead. You can see the specific id appended on your pipelineRun in the OpenShift console.
++
 [source,sh,role="copypaste"]
 ----
 oc get pods -l tekton.dev/pipelineRun=coolstuff-build-pipeline-CHANGE_ME
 ----
-+
-NOTE: You will have to check what the random id appended on your pipelinerun-instance is and adjust the above command with your id instead. You can see the specific id appended on your pipelineRun in the OpenShift console.
-+
-Expected output (non sekvential order)
+Expected output (non sequential order)
 +
 ----
 NAME                                            READY   STATUS      RESTARTS   AGE
@@ -592,10 +591,10 @@ Coolstuff Store's manager just watched a pipeline run end-to-end: clone source f
 
 **What you accomplished:**
 
-* Created a `coolstuff-build-pipeline` Pipeline chaining 2 Tasks with `runAfter` ordering
+* Created a `coolstuff-build-pipeline` Pipeline chaining two Tasks with `runAfter` ordering
 * Ran the Pipeline using a PipelineRun and monitored it through the visual pipeline graph
-* Added a `clone-source` Task that pulls real source code from the Gitea server
-* Extended the Pipeline to 3 stages: `fetch-source, build`, and `summarize`
+* Added a `git-clone` Task that pulls real source code from the Gitea server
+* Extended the Pipeline to three stages: `git-clone`, `build`, and `summarize`
 
 **Key takeaways:**
 

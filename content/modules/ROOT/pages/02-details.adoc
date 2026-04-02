@@ -12,7 +12,7 @@ include::partial$_attributes.adoc[]
 * **Module 1**: Tekton fundamentals (30 minutes)
 * **Module 2**: Creating Tasks and TaskRuns (35 minutes)
 * **Module 3**: Building your first pipeline (35 minutes)
-* **Module 4**: Pipeline as code (30 minutes)
+* **Module 4**: Pipelines As Code (30 minutes)
 * **Module 5**: Monitoring and troubleshooting (20 minutes)
 
 === Abbreviated workshop (1 hour)
@@ -64,7 +64,7 @@ The guide should provide the needed links timely, but if you need them you have 
 * The web terminal is accessible and running:
 ** {openshift_console_url}terminal[window=_blank]
 
-=== Pre Workshop setup
+=== Pre-workshop setup
 
 Before starting we need to log into the OpenShift web console and prepare it for the workshop.
 
@@ -77,7 +77,7 @@ NOTE: OpenShift ships with a web-based console that will allow users to perform 
 [link={openshift_console_url}]
 [window=_blank, align="center"]
 [role='params-link']
-image::developer-console-button.png[Developer Workspace - Button, 300]
+image::developer-console-button.png[OpenShift console button to open the web console,300]
 
 . You can log in with your user if needed:
 .. Username: `{OPENSHIFT_USERNAME}`
@@ -87,7 +87,7 @@ image::developer-console-button.png[Developer Workspace - Button, 300]
 [link={openshift_console_url}terminal]
 [window=_blank, align="center"]
 [role='params-link']
-image::developer-webterminal-button.png[Developer Workspace - Button, 300]
+image::developer-webterminal-button.png[OpenShift console button to open the web terminal,300]
 
 . Log in with your user if needed:
 .. Username: `{OPENSHIFT_USERNAME}`
@@ -95,19 +95,19 @@ image::developer-webterminal-button.png[Developer Workspace - Button, 300]
 
 . When logged in you might see this pop-up. Click on **Skip Tour**
 +
-image::ocp-skip-tour.png[OpenShift Tour Pop-up,link=self,window=blank,width=700]
+image::ocp-skip-tour.png[OpenShift welcome tour dialog with Skip Tour button highlighted,link=self,window=blank,width=700]
 +
-. If it's the first tine you start the Terminal you will need to initialize it. In the *Initialize Terminal* view enter the following:
+. If it's the first time you start the Terminal you will need to initialize it. In the *Initialize Terminal* view enter the following:
 .. Project: Create Project
 .. Project Name: `tekton-workshop-%OPENSHIFT_USERNAME%`
 +
-image::terminal-create-project.png[Initialize terminal,link=self,window=blank,width=700]
+image::terminal-create-project.png[Initialize Terminal dialog with Project Name field set to tekton-workshop-username,link=self,window=blank,width=700]
 +
 . Click on start and wait for the terminal to load.
 
-. Keep the Terminal tab/window with the active terminal open during the whole workshop. You will work extensively in the terminal during the excersises.
+. Keep the Terminal tab/window with the active terminal open during the whole workshop. You will work extensively in the terminal during the exercises.
 +
-image::terminal-running.png[OpenShift Terminal running,link=self,window=blank,width=700]
+image::terminal-running.png[OpenShift web terminal running in the bottom panel with a bash prompt,link=self,window=blank,width=700]
 
 [NOTE]
 ====
@@ -122,7 +122,7 @@ If the terminal window stops responding overall(the terminal runs as a pod in yo
 
 Or open it from the terminal icon in the top right corner or the OpenShift console as shown below, and pop it out to a separate window.
 
-image::terminal-open-icon.png[OpenShift open terminal ,link=self,window=blank,width=400]
+image::terminal-open-icon.png[Terminal icon in top-right corner of the OpenShift console navigation bar,link=self,window=blank,width=400]
 
 If the command does not work for CLI login, ask your facilitator for help.
 
@@ -160,4 +160,4 @@ oc version --client
 tkn version
 ----
 
-Great, let's dive into the excersises on the next page in *Module 1: Tekton fundamentals*
+Great, let's dive into the exercises on the next page in *Module 1: Tekton fundamentals*

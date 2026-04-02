@@ -9,7 +9,11 @@ Coolstuff Store's pipeline is running. The 3-stage workflow -- clone, build, sum
 
 In this final module, you'll learn how to monitor pipeline runs using both the CLI and the OpenShift console, and you'll deliberately introduce a failure to practice the diagnostic workflow that Coolstuff Store's team will use in production.
 
-// TODO: Talk about the value of gitops - using console and manual yaml files in this ws but really good to store templates in git and use gitops for continuity and security
+NOTE: Throughout this workshop you have created Tekton resources by applying YAML files from the terminal and using the OpenShift Pipelines console. This hands-on approach is ideal for learning and exploring concepts -- it gives you direct feedback and lets you iterate quickly. In production, however, teams typically manage pipeline definitions differently. +
+ +
+Storing your `Task`, `Pipeline`, and `Repository` definitions in a Git repository alongside your application code gives you versioning, peer review through pull requests, and a full audit trail of every change. Using a GitOps tool like Red Hat OpenShift GitOps (Argo CD) to synchronize those definitions to the cluster means the cluster state is always a reflection of what is in Git -- no manual `oc apply` commands, no configuration drift, and a clear rollback path if something goes wrong. For teams managing multiple environments or multiple pipelines, this consistency becomes essential. +
+ +
+You already took a step in this direction in Module 4: the `.tekton/` directory in your Gitea repository is your pipeline definition living in Git. Pipelines as Code extends this by making Git the trigger for pipeline execution. The next step is using OpenShift GitOps to manage the cluster-side resources -- the Tasks, the Repository CRD, and the Secrets -- with the same discipline.
 
 toc::[]
 
@@ -53,7 +57,7 @@ The pipeline runs from Module 3 are still in the cluster. In this exercise, you'
 oc project tekton-workshop-%OPENSHIFT_USERNAME%
 ----
 
-. We will manually create a named PipelineRun and execute it, to make it easier to follow up in these excersises.
+. We will manually create a named PipelineRun and execute it, to make it easier to follow up in these exercises.
 
 .. Create the PipelineRun definition:
 +
@@ -385,9 +389,8 @@ Couldn't retrieve Task "deploy-coolstuff-app": tasks.tekton.dev "deploy-coolstuf
 +
 The message `tasks.tekton.dev "deploy-coolstuff-app" not found` is the root cause. The `deploy` stage referenced a Task that does not exist.
 
-. View the console failure view. In the OpenShift console, navigate to **Pipelines**, then **PipelineRuns** and then click `coolstuff-full-pipelinerun-01`, then `coolstuff-full-run-01`. The pipeline graph shows `build` in green and `deploy` in red.
+. View the console failure view. In the OpenShift console, navigate to **Pipelines**, then **PipelineRuns** and then click `coolstuff-full-run-01`, then `coolstuff-full-run-01`. The pipeline graph shows `build` and `deploy` in red.
 
-// TODO: Add screenshot of the pipeline graph with build in green Succeeded and deploy in red Failed
 image::pipeline-run-fail.png[OpenShift console pipeline graph showing the build task node and the deploy task node in red -Failed,link=self,window=blank,width=700,title="Pipeline graph with failure -- build and deploy failed"]
 
 === Fix the missing Task and re-run
