@@ -218,9 +218,11 @@ NAME             URL
 coolstuff-app    https://gitea-workshop.../userXX/coolstuff-app
 ----
 
-. Verify that the repository is visible in the Pipelines UI as well. In the OpenShift console, fold out **Pipelines** and click in **Pipelines**.
+=== Verify
 
-.. Click on the **Repositories** tab in the center view. The coolstuff-app repository should be visible.
+Verify that the repository is visible in the Pipelines UI. In the OpenShift console, fold out **Pipelines** and click in **Pipelines**.
+
+. Click on the **Repositories** tab in the center view. The coolstuff-app repository should be visible.
 
 image::pac-repository-console.png[pipelines-as-code repository view,link=self,window=blank,width=700]
 

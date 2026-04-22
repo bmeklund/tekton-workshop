@@ -121,6 +121,10 @@ The Web Console is governed by RBAC, meaning you can only view and interact with
 
 . In the left navigation menu, click **Pipelines** and then **Pipelines** again. This menu confirms that OpenShift Pipelines is active in your cluster. The list is empty for now and `No Pipelines found` is shown in the main view. You'll populate it in the next exercises.
 
+=== Verify
+
+Confirm the OpenShift Pipelines operator is installed and running:
+
 . Navigate to **Ecosystem** and then **Installed Operators**.
 
 . Search for `OpenShift Pipelines` in the filter box. Confirm the operator shows a phase of **Succeeded**.

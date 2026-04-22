@@ -77,10 +77,46 @@ oc apply -f https://raw.githubusercontent.com/bmeklund/tekton-workshop/refs/head
 Go to Ecosystem > Installed operators > OpenShift Pipelines operator. In the overview page on the right hand side click on the link showing piplines-console-plugin: Disabled below the Console-plugin header. Click Enable then Save in the pop-up. 
 ```
 
+### To install the user distribution application for this workshop.
+
+####
+
+We're using the user-distribution app from the following repo: https://github.com/mostmark/user-distribution
+
+To install it we use gitops and ArgoCD from the user-distribution-gitops repository: https://github.com/mostmark/user-distribution-gitops
+Follow the guide from the repository. More or less the following:
+
+##### To install in your OpenShift cluster
+
+1. Clone the repository
+
+```sh
+git clone https://github.com/mostmark/user-distribution-gitops.git && cd user-distribution-gitops
+```
+
+2. Update manifests/secret.yaml and edit the credentials
+
+3. Create the resources
+
+```
+oc new-project portal
+oc create -f manifests/
+```
+
+4. Get the url to the admin interface
+
+```
+echo "https://$(oc get route user-distribution -o jsonpath='{.spec.host}')/admin"
+```
+
 ### Cleanup / Troubleshooting
 
 To clean up the cluster of gitops managed components run the below command
 
 ```sh
 oc delete applicationset workshop-base -n openshift-gitops
+```
+
+```sh
+oc delete project portal
 ```

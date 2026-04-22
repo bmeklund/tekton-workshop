@@ -426,13 +426,18 @@ build-coolstuff-run-01    2 minutes ago   18s        Succeeded
 hello-coolstuff-run-01    10 minutes ago  12s        Succeeded
 ----
 
+=== Verify
+
+In the OpenShift Console, confirm both TaskRuns succeeded using the same Task.
+
 . View the TaskRuns list in the OpenShift console under **Pipelines**, then **Tasks**.
+.. Both TaskRuns reference the same underlying Task > build-coolstuff-app.
 
 image::taskrun-list-console.png[OpenShift console TaskRuns list showing build-coolstuff-run-01 and build-coolstuff-run-02 both with green Succeeded status badges,link=self,window=blank,width=700,title="TaskRuns list demonstrating Task reuse with different parameters"]
 
 [NOTE]
 ====
-Note that the two different TaskRuns use the same underlying Task.
+Note that the two different TaskRuns ran in different pods
 ====
 
 == Module summary
