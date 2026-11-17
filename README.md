@@ -55,31 +55,20 @@ export QUAY_USER=your-quay-username
 
 The script builds the image as **quay.io/$QUAY_USER/tekton-tutorial:latest** and pushes it to the registry.
 
-### To install the needed components(operators and instances) run the below commands.
+### To install the needed components(operators and instances)
 
-#### As Cluster admin
+This workshops and the below GitOps repo assumes you already have a clean OpenShift Cluster with cluster admin access.
 
-1. Install the OpenShift GitOps Operator
+The below repo will install the needed operators and configure users as well as projects.
 
-```sh
-oc apply -f https://raw.githubusercontent.com/bmeklund/tekton-workshop/refs/heads/main/argocd/argo-cd.yaml
-```
+#### GitOps Repo
 
-2. When OpenShift GitOps is installed and ready - Install the workshops needed components(operators and instances)
+Use the following repo: https://github.com/bmeklund/tekton-workshop-gitops
 
-```sh
-oc apply -f https://raw.githubusercontent.com/bmeklund/tekton-workshop/refs/heads/main/argocd/base/workshop-base.yaml
-```
+Follow the guide in that repo for setting everything up.
 
-3. When OpenShift Pipelines is installed - the Pipelines console-plugin needs to be enabled - otherwise the clustertasks from the OpenShift Pipelines operator won't be accessible from user projects. The below action will enable Red Hat tasks to be used in user projects.
-
-```sh
-Go to Ecosystem > Installed operators > OpenShift Pipelines operator. In the overview page on the right hand side click on the link showing piplines-console-plugin: Disabled below the Console-plugin header. Click Enable then Save in the pop-up. 
-```
 
 ### To install the user distribution application for this workshop.
-
-####
 
 We're using the user-distribution app from the following repo: https://github.com/mostmark/user-distribution
 
@@ -107,16 +96,4 @@ oc create -f manifests/
 
 ```
 echo "https://$(oc get route user-distribution -o jsonpath='{.spec.host}')/admin"
-```
-
-### Cleanup / Troubleshooting
-
-To clean up the cluster of gitops managed components run the below command
-
-```sh
-oc delete applicationset workshop-base -n openshift-gitops
-```
-
-```sh
-oc delete project portal
 ```
