@@ -102,8 +102,7 @@ image::developer-webterminal-button.png[OpenShift console button to open the web
 image::ocp-skip-tour.png[OpenShift Tour Pop-up,link=self,window=blank,width=700]
 +
 * If it's the first time you start the Terminal you will need to initialize it. In the *Initialize Terminal* view enter the following:
-** *Project*: `Create Project`
-** *Project Name*: `tekton-workshop-%OPENSHIFT_USERNAME%`
+** *Project*: `tekton-workshop-%OPENSHIFT_USERNAME%`
 +
 image::terminal-create-project.png[Initialize terminal,link=self,window=blank,width=700]
 +

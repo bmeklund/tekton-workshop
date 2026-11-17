@@ -21,3 +21,4 @@
 ** xref:07-module-05-monitoring-troubleshooting.adoc#exercise-1[Exercise 1: Monitor pipeline status]
 ** xref:07-module-05-monitoring-troubleshooting.adoc#exercise-2[Exercise 2: Diagnose and fix a failing pipeline]
 * xref:08-conclusion.adoc[Conclusion and next steps]
+* xref:09-environment-links.adoc[Links to Environment]

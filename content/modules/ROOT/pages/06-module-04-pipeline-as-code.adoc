@@ -96,7 +96,7 @@ If you have closed the Gitea tab - `*Click on the 'Developer Repository' button 
 [role='params-link']
 image::developer-repository-button.png[Developer Repository - Button, 300]
 
-Then, `*click on 'Sign In' and login via OpenShift as user {user}/{password}*`
+Then, `*click on 'Sign In' and login via OpenShift as user {user}/openshift*`
 
 image::gitea-sign-in.png[Gitea start page,link=self,window=blank,width=700,title="Gitea's start page with sign in"]
 ====
@@ -257,7 +257,7 @@ image::gitea-webhook-verify.png[Webhook verification in Gitea,link=self,window=b
 . A `202` response confirms the connection is working.
 +
 image::gitea-verify-testdelivery.png[Gitea webhook settings page showing the PAC controller URL filled in and a successful 200 test delivery response,link=self,window=blank,width=700,title="Gitea webhook configured to send events to Pipelines as Code"]
-+
+
 
 [#exercise-2]
 == Exercise 2: Add a PipelineRun template to the repository

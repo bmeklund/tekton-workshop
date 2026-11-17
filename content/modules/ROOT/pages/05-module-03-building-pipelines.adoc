@@ -373,7 +373,7 @@ image::gitea-sign-in.png[Gitea start page,link=self,window=blank,width=700,title
 . Log in with your user:
 
 * **Username**: `{OPENSHIFT_USERNAME}`
-* **Password**: `{OPENSHIFT_PASSWORD}`
+* **Password**: `openshift`
 
 . In the top right corner, click the **+** icon and select **New repository**
 +
@@ -382,7 +382,7 @@ image::gitea-create-repo.png[Create new repo in gitea ui,link=self,window=blank,
 . Fill in the repository details:
 
 * **Repository name**: `coolstuff-app`
-* **Visibility**: Private (or Public -- either works)
+* **Visibility**: Public
 * **Description**: A coolstuff application
 * Check **Initialize repository** (Adds .gitignore, License and README)
 

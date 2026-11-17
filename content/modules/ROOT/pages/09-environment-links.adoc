@@ -1,0 +1,20 @@
+= Environment Links
+
+=== Workshop links and details
+
+The connection details for the environment you will use are as below, come back here if you need to revisit these details:
+
+The guide should provide the needed links timely, but if you need them you have them here too.
+
+* OpenShift console is accessible at:
+** {openshift_console_url}[window=_blank]
+* You can log in with your user:
+** Username: `{OPENSHIFT_USERNAME}`
+** Password: `{OPENSHIFT_PASSWORD}`
+* Gitea is accessible at:
+**  {gitea_console_url}[window=_blank]
+** Username: `{OPENSHIFT_USERNAME}`
+** Password: `{OPENSHIFT_PASSWORD}`
+
+* The web terminal is accessible and running:
+** {openshift_console_url}terminal[window=_blank]
